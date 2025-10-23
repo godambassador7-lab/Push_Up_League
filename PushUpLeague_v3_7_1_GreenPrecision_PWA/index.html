@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Push Up League</title>
+  <meta name="theme-color" content="#0d1d2e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="splash" class="splash">
+    <img src="splash-1024.png" alt="Push Up League logo" class="splash-logo">
+    <div class="splash-title">Push Up League</div>
+  </div>
+
+  <header class="top">
+    <div class="title">Push Up League</div>
+    <div class="right">
+      <div class="pill" id="equippedTitle">No Title</div>
+      <button id="authBtn" class="btn">Sign In / Create</button>
+    </div>
+  </header>
+
+  <main class="wrap app-centered">
+    <section class="card">
+      <h2>Calendar & Logging</h2>
+      <div class="sub">12‑hour logging. Lock day to apply XP. 7‑day ≥100/day → 3 days of 2× XP. Enthusiast rewards special types.</div>
+      <div class="row wrap-sm">
+        <button id="prev" class="btn">◀</button>
+        <span id="calTitle" class="pill">—</span>
+        <button id="next" class="btn">▶</button>
+        <span class="pill" style="margin-left:auto">Mode</span>
+        <select id="modeSel">
+          <option value="standard">Standard</option>
+          <option value="enthusiast">Enthusiast</option>
+        </select>
+      </div>
+      <div id="calendar"></div>
+    </section>
+
+    <section class="card">
+      <h2>Stats</h2>
+      <div class="stats">
+        <div class="stat"><div class="sub">Level</div><div class="value" id="lvl">1</div><div class="mini">XP to next: <span id="xpNext">500</span></div></div>
+        <div class="stat"><div class="sub">Lifetime XP</div><div class="value" id="xp">0</div><div class="mini">Spendable: <span id="sp">0</span></div></div>
+        <div class="stat"><div class="sub">Week</div><div class="value" id="week">0</div><div class="mini">Target: <span id="weekTarget">700</span></div></div>
+        <div class="stat"><div class="sub">Trust</div><div class="value" id="trust">75</div><div class="mini">Integrity</div></div>
+      </div>
+
+      <div class="card inner">
+        <h3>Log Hour</h3>
+        <form class="log-row" onsubmit="return false;">
+          <label>Hour:</label><select id="hour"></select>
+          <label>Type:</label><select id="type"></select>
+          <label>Count:</label><input id="cnt" type="number" min="1" step="1" value="10" class="num">
+          <button id="add" class="btn ok addbtn">+ Add</button>
+          <button id="lock" class="btn lockbtn">🔒 Lock Day</button>
+        </form>
+        <div id="hrs" class="hrgrid"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Titles Shop (500)</h2>
+      <div class="row wrap">
+        <div class="pill">Spendable <span id="sp2">0</span> XP</div>
+        <button id="equipNone" class="btn">Unequip</button>
+      </div>
+      <div id="shop" class="shop"></div>
+    </section>
+  </main>
+
+  <div id="authMask" class="overlay">
+    <div class="card modal">
+      <h3>Create / Sign In</h3>
+      <div>Username <input id="u"></div>
+      <div>Password <input id="p" type="password"></div>
+      <div>Display Name <input id="d"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="signin" class="btn">Sign In</button>
+        <button id="create" class="btn ok">Create</button>
+        <button id="close" class="btn" style="margin-left:auto">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="onboard" class="onboard hidden">
+    <div class="ob-wrap">
+      <div class="ob-card">
+        <h2>Welcome to Push Up League</h2>
+        <p class="muted">Let’s tailor your first week.</p>
+        <div class="ob-q">
+          <div class="q">How many push-ups can you do in one set?</div>
+          <div class="choices" data-key="setCapacity">
+            <button class="chip" data-v="0-10">0–10</button>
+            <button class="chip" data-v="11-25">11–25</button>
+            <button class="chip" data-v="26-50">26–50</button>
+            <button class="chip" data-v="51-100">51–100</button>
+            <button class="chip" data-v="100+">100+</button>
+          </div>
+        </div>
+        <div class="ob-q">
+          <div class="q">How many days per week do you train?</div>
+          <div class="choices" data-key="daysPerWeek">
+            <button class="chip" data-v="0">0</button>
+            <button class="chip" data-v="1-2">1–2</button>
+            <button class="chip" data-v="3-4">3–4</button>
+            <button class="chip" data-v="5-6">5–6</button>
+            <button class="chip" data-v="7">Every day</button>
+          </div>
+        </div>
+        <div class="ob-q">
+          <div class="q">What’s your focus for week one?</div>
+          <div class="choices" data-key="goal">
+            <button class="chip" data-v="consistency">Build consistency</button>
+            <button class="chip" data-v="total">Increase total reps</button>
+            <button class="chip" data-v="titles">Unlock titles</button>
+            <button class="chip" data-v="record">Beat my record</button>
+          </div>
+        </div>
+        <button id="obFinish" class="btn ok ob-finish" disabled>Set My Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="jarMask" class="overlay">
+    <div class="jarwrap">
+      <div class="jar"><div id="fill" class="fill"></div></div>
+      <div id="xpEarn">+0 XP</div>
+    </div>
+  </div>
+
+  <footer class="foot">© 2025 Demetrius Smith. All Rights Reserved.</footer>
+  <script src="main.js" defer></script>
+</body>
+</html>
