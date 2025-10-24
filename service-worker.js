@@ -1,1 +1,0 @@
-// Service worker for Push Up League v3.7.2
