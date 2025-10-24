@@ -1,0 +1,71 @@
+:root{
+  --bg:#0b0b10;
+  --panel:#14141a;
+  --accent:#d4af37; /* gold */
+  --accent-2:#ffd76a;
+  --text:#e6e6ea;
+  --muted:#9aa0a6;
+  --danger:#ff5a5a;
+  --good:#41d197;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+header{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:linear-gradient(180deg, rgba(0,0,0,.65), rgba(0,0,0,0));
+  border-bottom:1px solid rgba(212,175,55,.25);
+  backdrop-filter: blur(6px);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
+.brand .logo{width:34px;height:34px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center;color:var(--accent)}
+.tag{font-size:12px;color:var(--muted)}
+main{padding:16px;max-width:950px;margin:0 auto}
+.card{background:linear-gradient(145deg,#121217,#0f0f14);border:1px solid rgba(212,175,55,.18);border-radius:18px;padding:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);margin-bottom:16px}
+.section-title{display:flex;align-items:center;gap:8px;margin:0 0 12px 0;font-size:18px;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:8px;background:#0e0e13;border:1px solid rgba(212,175,55,.25);padding:8px 12px;border-radius:999px}
+button, .btn{
+  background: radial-gradient(120% 120% at 0% 0%, var(--accent-2) 0%, var(--accent) 40%, #8a6b1f 100%);
+  color:#1a1204;border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 16px rgba(212,175,55,.25);
+  transition: transform .06s ease, box-shadow .2s ease;
+}
+button:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 24px rgba(212,175,55,.35)}
+button:active{transform:translateY(0)}
+.btn-ghost{background:transparent;color:var(--accent);border:1px solid rgba(212,175,55,.35)}
+.grid{display:grid;gap:12px}
+.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:720px){.grid-cols-3{grid-template-columns:1fr 1fr}.grid-cols-2{grid-template-columns:1fr}}
+.meter{height:10px;border-radius:999px;background:#0f0f15;border:1px solid rgba(212,175,55,.2);overflow:hidden}
+.meter > span{display:block;height:100%;background:linear-gradient(90deg,var(--good),#e0d24b,var(--danger));width:0%}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+input,select{background:#0f0f15;color:var(--text);border:1px solid rgba(212,175,55,.25);border-radius:10px;padding:10px}
+.muted{color:var(--muted)}
+.badges{display:flex;gap:10px;flex-wrap:wrap}
+.badge{border:1px solid rgba(212,175,55,.3);padding:8px 10px;border-radius:10px;background:#0d0d12}
+.hidden{display:none !important}
+.title-shop .item{display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid rgba(212,175,55,.18);border-radius:12px;background:#0e0e13}
+footer{padding:32px;color:var(--muted);text-align:center}
+
+
+/* --- Mini Calendar --- */
+.calendar{margin-top:8px;border:1px solid rgba(212,175,55,.18);border-radius:14px;overflow:hidden;background:#0e0e13}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:0;background:#0c0c11;border-bottom:1px solid rgba(212,175,55,.12)}
+.cal-head div{padding:8px 6px;text-align:center;color:var(--muted);font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
+.cal-cell{padding:10px 6px;text-align:center;border-right:1px solid rgba(212,175,55,.06);border-bottom:1px solid rgba(212,175,55,.06);min-height:40px;cursor:pointer}
+.cal-cell:last-child{border-right:none}
+.cal-cell.locked{background:rgba(212,175,55,.08)}
+.cal-cell.today{outline:2px solid rgba(212,175,55,.45);outline-offset:-2px;border-radius:6px}
+.cal-monthbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba(212,175,55,.12);background:#0e0e13}
+.cal-monthbar button{padding:6px 10px}
+
+/* --- Logger controls --- */
+.logger{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.logger .qty{display:flex;align-items:center;background:#0f0f15;border:1px solid rgba(212,175,55,.25);border-radius:12px;overflow:hidden}
+.logger .qty input{border:0;background:transparent;padding:10px;width:110px;text-align:center;font-size:18px}
+.logger .qty button{border:0;background:transparent;color:var(--accent);box-shadow:none;padding:10px 14px}
+.logger .qty button:active{transform:scale(0.98)}
+.stat-row{display:flex;gap:10px;flex-wrap:wrap}
+.stat-row .chip strong{min-width:40px;display:inline-block;text-align:right}
