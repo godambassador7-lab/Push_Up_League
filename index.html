@@ -1,1 +1,80 @@
-<!-- HTML for Push Up League v3.7.2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Push Up League</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Push Up League</h1>
+      <button id="authBtn">Sign In / Create</button>
+    </header>
+
+    <main>
+      <section id="calendar">
+        <h2>Calendar & Logging</h2>
+        <p>12-hour logging. Lock day to apply XP. 7-day ≥100/day → 3 days of 2× XP. Enthusiast rewards special types.</p>
+        <div class="calendar-controls">
+          <button id="prevWeek">&lt;</button>
+          <button id="today">–</button>
+          <button id="nextWeek">&gt;</button>
+          <select id="modeSelect">
+            <option>Standard</option>
+            <option>Enthusiast</option>
+          </select>
+        </div>
+      </section>
+
+      <section id="stats">
+        <h2>Stats</h2>
+        <div class="stat-grid">
+          <div><strong>Level</strong><p id="level">1</p><small>XP to next: 500</small></div>
+          <div><strong>Lifetime XP</strong><p id="lifetimeXP">0</p><small>Spendable: 0</small></div>
+          <div><strong>Week</strong><p id="weekXP">0</p><small>Target: 700</small></div>
+          <div><strong>Trust</strong><p id="trust">75</p><small>Integrity</small></div>
+        </div>
+      </section>
+
+      <section id="log">
+        <h2>Log Hour</h2>
+        <label>Hour:</label> <input type="time" id="hourInput" />
+        <label>Type:</label> <select id="typeSelect"><option>Standard</option><option>Enthusiast</option></select>
+        <label>Count:</label> <input type="number" id="countInput" value="10" />
+        <button id="addBtn" class="green">+ Add</button>
+        <button id="lockBtn" class="blue">🔒 Lock Day</button>
+      </section>
+
+      <section id="titles">
+        <h2>Titles Shop (500)</h2>
+        <p>Spendable <span id="spendableXP">0</span> XP</p>
+        <button id="unequipBtn">Unequip</button>
+      </section>
+
+      <section id="onboard">
+        <h2>Welcome to Push Up League</h2>
+        <p>Let's tailor your first week.</p>
+        <div class="questions">
+          <label>How many push-ups can you do in one set?</label>
+          <div><button>0–10</button><button>11–25</button><button>26–50</button><button>51–100</button><button>100+</button></div>
+          <label>How many days per week do you train?</label>
+          <div><button>0</button><button>1–2</button><button>3–4</button><button>5–6</button><button>Every day</button></div>
+          <label>What's your focus for week one?</label>
+          <div><button>Build consistency</button><button>Increase total reps</button><button>Unlock titles</button><button>Beat my record</button></div>
+        </div>
+        <button id="setPlanBtn" class="green">Set My Plan</button>
+      </section>
+    </main>
+
+    <footer>
+      <p>© 2025 Demetrius Smith. All Rights Reserved.</p>
+    </footer>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
