@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { PUSHUP_TYPES, PushUpType } from '@/lib/pushupTypes';
 import { WorkoutSet } from '@/lib/enhancedStore';
-import { Plus, Minus, Coins, Trophy, X, ChevronDown } from 'lucide-react';
+import { Plus, Minus, Coins, Trophy, X, ChevronDown, Search } from 'lucide-react';
 import { WorkoutSuccessModal } from './WorkoutSuccessModal';
 import { SessionChallengeSelector } from './SessionChallengeSelector';
 import { SessionChallenge, checkSessionChallengeCompletion, SessionWorkoutData } from '@/lib/sessionChallenges';
@@ -20,6 +20,7 @@ export const WorkoutLoggerAdvanced = () => {
   const [selectedSessionChallenge, setSelectedSessionChallenge] = useState<SessionChallenge | null>(null);
   const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
   const [completedSessionChallenges, setCompletedSessionChallenges] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const logWorkout = useEnhancedStore((state) => state.logWorkout);
   const getTodayWorkout = useEnhancedStore((state) => state.getTodayWorkout);
@@ -49,7 +50,29 @@ export const WorkoutLoggerAdvanced = () => {
     newSets[index].type = type;
     setWorkoutSets(newSets);
     setShowTypeSelector(null);
+    setSearchQuery(''); // Reset search when selecting a type
   };
+
+  // Filter push-up types based on search query
+  const getFilteredPushupTypes = () => {
+    if (!searchQuery.trim()) {
+      return Object.values(PUSHUP_TYPES);
+    }
+
+    const query = searchQuery.toLowerCase();
+    return Object.values(PUSHUP_TYPES).filter((type) =>
+      type.name.toLowerCase().includes(query) ||
+      type.description.toLowerCase().includes(query) ||
+      type.difficulty.toLowerCase().includes(query)
+    );
+  };
+
+  // Clear search when closing the selector or switching sets
+  useEffect(() => {
+    if (showTypeSelector === null) {
+      setSearchQuery('');
+    }
+  }, [showTypeSelector]);
 
   const getTotalPushups = () => {
     return workoutSets.reduce((total, set) => total + set.reps, 0);
@@ -191,6 +214,8 @@ export const WorkoutLoggerAdvanced = () => {
               elite: 'text-warning border-warning/50',
             };
 
+            const filteredTypes = getFilteredPushupTypes();
+
             return (
               <div
                 key={index}
@@ -227,7 +252,13 @@ export const WorkoutLoggerAdvanced = () => {
                   {/* Type Selector */}
                   <div className="flex-1 relative min-w-0 overflow-visible">
                     <button
-                      onClick={() => setShowTypeSelector(showTypeSelector === index ? null : index)}
+                      onClick={() => {
+                        const next = showTypeSelector === index ? null : index;
+                        setShowTypeSelector(next);
+                        if (next !== null) {
+                          setSearchQuery('');
+                        }
+                      }}
                       className={`w-full p-2 glass-light rounded border ${difficultyColors[typeData.difficulty]} flex items-center justify-between hover:bg-accent/10 transition text-xs sm:text-sm active:scale-98`}
                     >
                       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
@@ -241,30 +272,59 @@ export const WorkoutLoggerAdvanced = () => {
 
                     {/* Dropdown */}
                     {isTypeSelectorOpen && (
-                      <div className="absolute z-[9999] mt-2 w-full glass border border-accent rounded-lg shadow-xl max-h-64 overflow-y-auto left-0">
-                        {Object.values(PUSHUP_TYPES).map((type) => (
-                          <button
-                            key={type.id}
-                            onClick={() => updateSetType(index, type.id)}
-                            className={`w-full p-3 text-left hover:bg-accent/20 transition border-b border-dark-border last:border-b-0 ${
-                              set.type === type.id ? 'bg-accent/10' : ''
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div>
-                                  <div className="font-bold text-sm">{type.name}</div>
-                                  <div className="text-xs text-gray-400 capitalize">{type.difficulty}</div>
-                                </div>
-                              </div>
-                              <div className="text-xs">
-                                <div className="text-electric-blue font-bold">{type.xpMultiplier}x XP</div>
-                                <div className="text-warning font-bold">{type.coinMultiplier}x Coins</div>
-                              </div>
+                      <div className="absolute z-[9999] mt-2 w-full glass border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden left-0">
+                        {/* Search Input */}
+                        <div className="sticky top-0 p-3 bg-dark border-b border-dark-border">
+                          <div className="relative">
+                            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                              type="text"
+                              placeholder="Search push-up types..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full pl-10 pr-3 py-2 glass-light border border-dark-border rounded text-sm text-white placeholder-gray-500 outline-none focus:border-accent"
+                              autoFocus
+                            />
+                          </div>
+                          {searchQuery && (
+                            <div className="text-xs text-gray-400 mt-2">
+                              {filteredTypes.length} results
                             </div>
-                            <div className="text-xs text-gray-400 mt-1">{type.description}</div>
-                          </button>
-                        ))}
+                          )}
+                        </div>
+
+                        {/* Push-up Type List */}
+                        <div className="max-h-64 overflow-y-auto">
+                          {filteredTypes.length > 0 ? (
+                            filteredTypes.map((type) => (
+                              <button
+                                key={type.id}
+                                onClick={() => updateSetType(index, type.id)}
+                                className={`w-full p-3 text-left hover:bg-accent/20 transition border-b border-dark-border last:border-b-0 ${
+                                  set.type === type.id ? 'bg-accent/10' : ''
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div>
+                                      <div className="font-bold text-sm">{type.name}</div>
+                                      <div className="text-xs text-gray-400 capitalize">{type.difficulty}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs">
+                                    <div className="text-electric-blue font-bold">{type.xpMultiplier}x XP</div>
+                                    <div className="text-warning font-bold">{type.coinMultiplier}x Coins</div>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-400 mt-1">{type.description}</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-6 text-center text-gray-400 text-sm">
+                              No push-up types found matching "{searchQuery}"
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
