@@ -193,9 +193,9 @@ export default function Dashboard() {
               {/* Rank and Goal Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
                 {/* Current Rank Card */}
-                <div className="glass glass-border rounded-xl p-6 text-center">
+                <div className="glass glass-border rounded-xl p-6 flex flex-col items-center">
                   <RankBadge rank={currentRank} size="lg" />
-                  <div className="mt-6 space-y-2">
+                  <div className="mt-6 space-y-2 text-center">
                     <div className="text-xs text-gray-400 uppercase tracking-widest font-bold">Current Rank</div>
                     <div className="text-3xl sm:text-4xl font-black text-hero text-shadow-glow">
                       {RANK_LADDER[currentRank - 1].title}
@@ -244,12 +244,12 @@ export default function Dashboard() {
               {/* Streak Card */}
               <div className="glass glass-border rounded-xl p-6">
                 <div className="text-xs text-gray-400 uppercase tracking-wider font-display mb-4">Streak</div>
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
                     <div className="text-5xl font-black text-hero text-accent text-shadow-glow">{currentStreak}</div>
                     <div className="text-sm text-gray-400 mt-1">BEST {longestStreak}</div>
                   </div>
-                  <div className="text-6xl">🔥</div>
+                  <div className="text-6xl flex-shrink-0">🔥</div>
                 </div>
               </div>
 
