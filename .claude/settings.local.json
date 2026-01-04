@@ -9,7 +9,16 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(gh --version:*)",
+      "Bash(start https://github.com/new)",
+      "Bash(git remote set-url:*)",
+      "Bash(git submodule add:*)"
     ]
   }
 }
