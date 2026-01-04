@@ -168,147 +168,137 @@ export default function Dashboard() {
       {activeView === 'dashboard' && (
         <>
           {/* Hero Section */}
-          <section className="glass-light border-b border-dark-border py-6 sm:py-8 md:py-12">
-            <div className="max-w-7xl mx-auto px-3 sm:px-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 items-start">
-                {/* Rank Card */}
-                <div className="flex flex-col items-center text-center md:col-span-1">
+          <section className="glass-light border-b border-dark-border py-12 sm:py-16 md:py-20">
+            <div className="max-w-6xl mx-auto px-6">
+              {/* Welcome Back */}
+              <div className="text-center mb-8">
+                <div className="text-sm sm:text-base text-gray-400 uppercase tracking-widest font-bold">Welcome Back</div>
+              </div>
+
+              {/* Centered Username */}
+              <div className="text-center mb-12">
+                <div className="text-5xl sm:text-6xl md:text-7xl font-black text-impact text-shadow-lg mb-4">
+                  {username}
+                </div>
+                <p className="text-gray-300 text-lg sm:text-xl md:text-2xl font-bold text-shadow-lg">
+                  Show up. Do the work. Earn the rank.
+                </p>
+                {isWorldRecordCandidate && (
+                  <div className="mt-4 inline-block px-6 py-2 bg-gradient-to-r from-warning/30 to-gold/30 border-2 border-warning rounded-lg text-warning text-sm sm:text-base font-black text-hero animate-pulse-glow">
+                    👑 WORLD RECORD CANDIDATE
+                  </div>
+                )}
+              </div>
+
+              {/* Rank and Goal Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+                {/* Current Rank Card */}
+                <div className="glass glass-border rounded-xl p-6 text-center">
                   <RankBadge rank={currentRank} size="lg" />
-                  <div className="mt-4 sm:mt-6 space-y-1 sm:space-y-2">
+                  <div className="mt-6 space-y-2">
                     <div className="text-xs text-gray-400 uppercase tracking-widest font-bold">Current Rank</div>
-                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-hero text-shadow-glow">{RANK_LADDER[currentRank - 1].title}</div>
+                    <div className="text-3xl sm:text-4xl font-black text-hero text-shadow-glow">
+                      {RANK_LADDER[currentRank - 1].title}
+                    </div>
                     {nextRankData && (
-                      <div className="text-xs sm:text-sm text-accent pt-1 sm:pt-2">
+                      <div className="text-sm text-accent pt-2">
                         {rankProgress.percent}% to {nextRankData.title}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Welcome Message */}
-                <div className="md:col-span-2 space-y-3 sm:space-y-4">
-                  <div>
-                    <div className="text-xs text-gray-400 uppercase tracking-widest font-bold">Welcome Back</div>
-                    <div className="text-3xl sm:text-4xl md:text-5xl font-black text-impact mt-1 sm:mt-2 text-shadow-lg">{username}</div>
-                    {isWorldRecordCandidate && (
-                      <div className="mt-2 sm:mt-3 inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-warning/30 to-gold/30 border-2 border-warning rounded-lg text-warning text-xs sm:text-sm font-black text-hero animate-pulse-glow">
-                        👑 WORLD RECORD CANDIDATE
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-gray-300 text-base sm:text-lg md:text-xl font-bold leading-relaxed text-shadow-lg">
-                    Show up. Do the work. Earn the rank.
-                  </p>
-
-                  {/* Daily Goal Card */}
-                  <div className="glass glass-border rounded-lg p-3 sm:p-4 md:p-5 border-2 hover:border-accent transition-all">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-xs text-gray-400 uppercase tracking-widest font-bold">Today's Goal</div>
-                        <div className="text-2xl sm:text-3xl md:text-4xl font-black text-hero text-accent text-shadow-glow">{dailyGoal} <span className="text-base sm:text-xl md:text-2xl">PUSH-UPS</span></div>
-                      </div>
-                      <Target size={28} className={`sm:w-[32px] sm:h-[32px] md:w-[40px] md:h-[40px] ${todayWorkout ? 'text-success drop-shadow-2xl' : 'text-gray-600'}`} strokeWidth={2.5} />
+                {/* Today's Goal Card */}
+                <div className="glass glass-border rounded-xl p-6 border-2 hover:border-accent transition-all">
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <Target size={48} className={`mb-4 ${todayWorkout ? 'text-success drop-shadow-2xl' : 'text-gray-600'}`} strokeWidth={2.5} />
+                    <div className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Today's Goal</div>
+                    <div className="text-4xl sm:text-5xl font-black text-hero text-accent text-shadow-glow">
+                      {dailyGoal}
                     </div>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-300 mt-1">PUSH-UPS</div>
                     {todayWorkout && (
-                      <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-dark-border">
-                        <div className="text-xs sm:text-sm text-success">
+                      <div className="mt-4 pt-4 border-t border-dark-border w-full">
+                        <div className="text-sm text-success">
                           ✓ {todayWorkout.pushups} completed today
                           {todayWorkout.pushups >= dailyGoal && ' • Goal achieved!'}
                         </div>
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
 
-                  <div className="text-xs text-gray-500">
-                    Proficiency: <span className="text-accent font-bold capitalize">{proficiency}</span>
+              {/* Proficiency */}
+              <div className="text-center mt-6">
+                <div className="text-sm text-gray-500">
+                  Proficiency: <span className="text-accent font-bold capitalize">{proficiency}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Compact Info Section */}
+          <section className="max-w-6xl mx-auto px-6 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Streak Card */}
+              <div className="glass glass-border rounded-xl p-6">
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-display mb-4">Streak</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-5xl font-black text-hero text-accent text-shadow-glow">{currentStreak}</div>
+                    <div className="text-sm text-gray-400 mt-1">BEST {longestStreak}</div>
+                  </div>
+                  <div className="text-6xl">🔥</div>
+                </div>
+              </div>
+
+              {/* Quick Info Card */}
+              <div className="glass glass-border rounded-xl p-6">
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-display mb-4">Quick Info</div>
+                <div className="space-y-3 text-base">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Workouts Logged:</span>
+                    <span className="font-bold text-xl">{workouts.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Streak Freezes:</span>
+                    <span className="font-bold text-xl">{streakFreezes}</span>
+                  </div>
+                  <div className="border-t border-dark-border pt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Multiplier:</span>
+                      <span className="text-accent font-bold text-xl">
+                        {(() => {
+                          const streak = currentStreak;
+                          if (streak <= 3) return '1.0x';
+                          if (streak <= 7) return '1.1x';
+                          if (streak <= 14) return '1.25x';
+                          if (streak <= 30) return '1.5x';
+                          if (streak <= 60) return '1.75x';
+                          return '2.0x';
+                        })()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Main Content */}
-          <section className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 md:py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-              {/* Left Column - Primary Actions */}
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6 md:space-y-8">
-                {/* Streak Display */}
-                <StreakDisplay
-                  days={currentStreak}
-                  isBroken={streakStatus.broken}
-                  maxStreak={longestStreak}
-                />
-
-                {/* XP Progress */}
-                <div className="p-4 sm:p-6 rounded-lg glass glass-border">
-                  <XPBar
-                    current={rankProgress.current}
-                    required={rankProgress.required}
-                    percent={rankProgress.percent}
-                    currentRank={currentRank}
-                  />
-                </div>
-
-                {/* Workout Logger */}
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-base sm:text-lg font-display font-bold">Log Workout</h3>
-                    <button
-                      onClick={() => setUseAdvancedLogger(!useAdvancedLogger)}
-                      className="text-xs px-2 sm:px-3 py-1 glass-light rounded border border-accent/50 hover:bg-accent/10 transition text-accent active:scale-95 whitespace-nowrap flex-shrink-0"
-                    >
-                      {useAdvancedLogger ? 'Simple Mode' : 'Advanced Mode'}
-                    </button>
-                  </div>
-                  {useAdvancedLogger ? <WorkoutLoggerAdvanced /> : <WorkoutLogger />}
-                </div>
-
-                {/* Stats Grid */}
-                <StatsPanel />
+          {/* Workout Logger Section */}
+          <section className="max-w-6xl mx-auto px-6 pb-12">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xl font-display font-bold">Log Workout</h3>
+                <button
+                  onClick={() => setUseAdvancedLogger(!useAdvancedLogger)}
+                  className="text-sm px-4 py-2 glass-light rounded border border-accent/50 hover:bg-accent/10 transition text-accent active:scale-95"
+                >
+                  {useAdvancedLogger ? 'Simple Mode' : 'Advanced Mode'}
+                </button>
               </div>
-
-              {/* Right Column - Secondary Information */}
-              <div className="space-y-4 sm:space-y-6">
-                {/* Quick Stats */}
-                <div className="p-4 sm:p-6 rounded-lg glass glass-border space-y-3 sm:space-y-4">
-                  <div className="text-xs text-gray-400 uppercase tracking-wider font-display">Quick Info</div>
-                  <div className="space-y-2 sm:space-y-3 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Workouts Logged</span>
-                      <span className="font-bold">{workouts.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Streak Freezes</span>
-                      <span className="font-bold">{streakFreezes}</span>
-                    </div>
-                    <div className="border-t border-dark-border pt-2 sm:pt-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-400">Multiplier</span>
-                        <span className="text-accent font-bold">
-                          {(() => {
-                            const streak = currentStreak;
-                            if (streak <= 3) return '1.0x';
-                            if (streak <= 7) return '1.1x';
-                            if (streak <= 14) return '1.25x';
-                            if (streak <= 30) return '1.5x';
-                            if (streak <= 60) return '1.75x';
-                            return '2.0x';
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quests */}
-                <QuestsPanel />
-
-                {/* Achievements */}
-                <AchievementsPanel />
-
-                {/* Recent Workouts */}
-                <WorkoutHistory />
-              </div>
+              {useAdvancedLogger ? <WorkoutLoggerAdvanced /> : <WorkoutLogger />}
             </div>
           </section>
         </>
