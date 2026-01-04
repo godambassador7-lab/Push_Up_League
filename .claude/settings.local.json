@@ -18,7 +18,8 @@
       "Bash(gh --version:*)",
       "Bash(start https://github.com/new)",
       "Bash(git remote set-url:*)",
-      "Bash(git submodule add:*)"
+      "Bash(git submodule add:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
