@@ -19,7 +19,11 @@
       "Bash(start https://github.com/new)",
       "Bash(git remote set-url:*)",
       "Bash(git submodule add:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(npm run export:*)",
+      "Bash(robocopy:*)",
+      "Bash(xcopy:*)"
     ]
   }
 }
