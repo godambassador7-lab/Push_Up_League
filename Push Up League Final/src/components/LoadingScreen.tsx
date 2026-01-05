@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 
 interface LoadingScreenProps {
   onLoadComplete?: () => void;
@@ -44,12 +43,10 @@ export const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
       <div className="relative z-10 flex flex-col items-center gap-8">
         {/* Logo */}
         <div className="relative w-32 h-32 animate-fade-in">
-          <Image
+          <img
             src="/logo.png"
             alt="Push Up League"
-            fill
-            className="object-contain drop-shadow-2xl"
-            priority
+            className="w-full h-full object-contain drop-shadow-2xl"
           />
         </div>
 
