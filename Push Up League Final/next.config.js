@@ -8,6 +8,9 @@ const nextConfig = {
    */
   output: 'export',
   trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
   eslint: {
     // Skip linting during export builds to avoid missing eslint dependency in CI/Pages
     ignoreDuringBuilds: true,
