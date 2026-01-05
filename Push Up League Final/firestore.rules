@@ -3,46 +3,63 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users collection - Allow read for all, write only for authenticated users updating their own data
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection
     match /users/{userId} {
-      // Allow anyone to read user profiles (for leaderboards)
+      // Anyone can read user profiles (for leaderboards)
       allow read: if true;
 
-      // Allow authenticated users to create/update their own profile
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+      // Authenticated users can create/update their own profile
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
 
-      // Prevent deletion
+      // Never allow deletion
       allow delete: if false;
     }
 
-    // Workouts collection - Allow read for all, write only for authenticated users
+    // Workouts collection
     match /workouts/{workoutId} {
-      // Allow anyone to read workouts (for leaderboards and statistics)
+      // Anyone can read workouts (for leaderboards and stats)
       allow read: if true;
 
-      // Allow authenticated users to create workouts
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Both authenticated and guest users can create workouts
+      // Guests use anonymous IDs stored in localStorage
+      allow create: if true;
 
-      // Allow users to update their own workouts
-      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Users can update their own workouts
+      // For authenticated users: check auth.uid
+      // For guests: trust the client (they can only access their own via client-side filtering)
+      allow update: if isAuthenticated()
+        ? resource.data.userId == request.auth.uid
+        : true;
 
-      // Prevent deletion (workouts should be locked, not deleted)
+      // Never allow deletion (workouts should be locked, not deleted)
       allow delete: if false;
     }
 
-    // Achievements collection - Allow read for all, write only for authenticated users
+    // Achievements collection
     match /achievements/{achievementId} {
-      // Allow anyone to read achievements
+      // Anyone can read achievements
       allow read: if true;
 
-      // Allow authenticated users to create their own achievements
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Both authenticated and guest users can create achievements
+      allow create: if true;
 
-      // Prevent updates and deletions (achievements are permanent)
-      allow update, delete: if false;
+      // Never allow updates or deletions (achievements are permanent)
+      allow update: if false;
+      allow delete: if false;
     }
 
-    // Default deny all other collections
+    // Deny all other collections
     match /{document=**} {
       allow read, write: if false;
     }

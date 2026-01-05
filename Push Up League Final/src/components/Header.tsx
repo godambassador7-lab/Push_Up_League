@@ -6,7 +6,8 @@ import { useEnhancedStore } from '@/lib/enhancedStore';
 import { TITLE_CATALOG } from '@/lib/titleShop';
 import { RankBadge } from './RankBadge';
 import { Menu } from './Menu';
-import { Flame, MenuIcon, Star } from 'lucide-react';
+import { MenuIcon, Star } from 'lucide-react';
+import { StreakFlame } from './StreakFlame';
 
 export const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
@@ -51,10 +52,7 @@ export const Header = () => {
                 )}
               </div>
               <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                <Flame
-                  size={12}
-                  className={isBroken ? 'text-gray-500' : 'text-accent'}
-                />
+                <StreakFlame streak={currentStreak} isBroken={isBroken} size={12} />
                 {currentStreak} day streak
               </div>
             </div>
