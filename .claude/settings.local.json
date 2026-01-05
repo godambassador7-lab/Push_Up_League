@@ -24,7 +24,8 @@
       "Bash(npm run export:*)",
       "Bash(robocopy:*)",
       "Bash(xcopy:*)",
-      "Bash(curl -s https://godambassador7-lab.github.io/Push_Up_League/)"
+      "Bash(curl -s https://godambassador7-lab.github.io/Push_Up_League/)",
+      "Bash(git restore:*)"
     ]
   }
 }

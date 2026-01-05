@@ -29,7 +29,7 @@ export const Header = () => {
           {/* Logo and Title */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <img
-              src="/logo.png"
+              src="/Push_Up_League/logo.png"
               alt="Push Up League Logo"
               className="w-12 h-12 sm:w-[72px] sm:h-[72px] rounded-lg flex-shrink-0"
             />

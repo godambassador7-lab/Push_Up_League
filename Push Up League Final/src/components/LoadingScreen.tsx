@@ -44,7 +44,7 @@ export const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
         {/* Logo */}
         <div className="relative w-32 h-32 animate-fade-in">
           <img
-            src="/logo.png"
+            src="/Push_Up_League/logo.png"
             alt="Push Up League"
             className="w-full h-full object-contain drop-shadow-2xl"
           />

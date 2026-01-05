@@ -2,11 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  /**
-   * Export static HTML so we can deploy via GitHub Pages.
-   * Deploying to root of repository, no basePath needed.
-   */
   output: 'export',
+  basePath: '/Push_Up_League',
+  assetPrefix: '/Push_Up_League',
   trailingSlash: true,
   images: {
     unoptimized: true,
