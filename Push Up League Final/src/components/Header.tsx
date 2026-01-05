@@ -7,7 +7,6 @@ import { TITLE_CATALOG } from '@/lib/titleShop';
 import { RankBadge } from './RankBadge';
 import { Menu } from './Menu';
 import { Flame, MenuIcon, Star } from 'lucide-react';
-import Image from 'next/image';
 
 export const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
@@ -29,12 +28,10 @@ export const Header = () => {
         <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
           {/* Logo and Title */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Image
+            <img
               src="/logo.png"
               alt="Push Up League Logo"
-              width={48}
-              height={48}
-              className="rounded-lg sm:w-[72px] sm:h-[72px] flex-shrink-0"
+              className="w-12 h-12 sm:w-[72px] sm:h-[72px] rounded-lg flex-shrink-0"
             />
             <div className="font-black text-base sm:text-2xl lg:text-3xl text-hero bg-gradient-to-r from-white via-gray-300 to-gray-400 bg-clip-text text-transparent truncate uppercase" style={{ letterSpacing: '0.05em', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>PUSH-UP LEAGUE</div>
             <div className="hidden sm:block text-[10px] text-gray-500 uppercase tracking-widest font-bold px-2 py-0.5 bg-dark-border rounded flex-shrink-0">BETA</div>
