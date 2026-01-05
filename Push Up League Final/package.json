@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "export": "next build",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "gh-pages -d out"
   },
   "dependencies": {
     "@types/node": "^20.0.0",
@@ -27,6 +28,7 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
-    "@types/uuid": "^9.0.0"
+    "@types/uuid": "^9.0.0",
+    "gh-pages": "^6.3.0"
   }
 }
