@@ -79,6 +79,7 @@ export const WorkoutLoggerAdvanced = () => {
   };
 
   const calculateEstimatedRewards = () => {
+    const earningScale = 0.25;
     const totalPushups = getTotalPushups();
 
     // Calculate average multipliers from all sets
@@ -96,7 +97,10 @@ export const WorkoutLoggerAdvanced = () => {
     const baseXP = totalPushups * avgXpMult;
     const setBonus = workoutSets.length > 1 ? workoutSets.length * 0.05 : 0;
     const challengeBonus = dailyChallenge ? 0.25 : 0;
-    const estimatedXP = Math.min(Math.floor(baseXP * (1 + setBonus) * (1 + challengeBonus)), 500);
+    const estimatedXP = Math.min(
+      Math.floor(baseXP * (1 + setBonus) * (1 + challengeBonus) * earningScale),
+      500
+    );
 
     // Coin Calculation
     const baseCoins = 10 + (workoutSets.length > 1 ? workoutSets.length * 2 : 0);
@@ -107,7 +111,11 @@ export const WorkoutLoggerAdvanced = () => {
     if (goalCompleted) coins += 20;
     if (currentStreak > 1) coins += 5;
 
-    return { estimatedXP, estimatedCoins: coins, goalCompleted };
+    return {
+      estimatedXP,
+      estimatedCoins: Math.max(1, Math.floor(coins * earningScale)),
+      goalCompleted,
+    };
   };
 
   const handleSubmit = () => {
@@ -272,7 +280,7 @@ export const WorkoutLoggerAdvanced = () => {
 
                     {/* Dropdown */}
                     {isTypeSelectorOpen && (
-                      <div className="absolute z-[9999] mt-2 w-[150%] sm:w-[400px] bg-dark-card/95 backdrop-blur-md border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden left-0">
+                      <div className="absolute z-[9999] mt-2 w-[150%] sm:w-[400px] bg-dark-card/95 backdrop-blur-md border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden left-0 sm:left-auto sm:right-0 sm:translate-x-0 -translate-x-[25%] sm:-translate-x-0">
                         {/* Search Input */}
                         <div className="sticky top-0 p-3 bg-dark-card/95 backdrop-blur-md border-b border-dark-border">
                           <div className="relative">

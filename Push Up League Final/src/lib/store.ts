@@ -46,6 +46,8 @@ export interface RankData {
   cumulativeXp: number;
 }
 
+const POINT_EARNING_SCALE = 0.25;
+
 export const RANK_LADDER: RankData[] = [
   { rank: 1, title: 'Initiate', xpRequired: 500, cumulativeXp: 500 },
   { rank: 2, title: 'Iron Hand', xpRequired: 1500, cumulativeXp: 2000 },
@@ -72,7 +74,7 @@ export const calculateXP = (
   sets?: number,
   dailyChallengeCompleted?: boolean
 ): number => {
-  let xp = pushups * 1; // Base: 1 XP per pushup
+  let xp = pushups * POINT_EARNING_SCALE; // Base scaled down earnings
 
   // Streak multiplier
   const streakMult = getStreakMultiplier(streakDays);
@@ -227,7 +229,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     const currentRankXp = newTotalXp - (newRank > 1 ? RANK_LADDER[newRank - 2].cumulativeXp : 0);
 
     // Add coins
-    const coinsEarned = 10 + (sets ? sets * 2 : 0); // 10 base + 2 per set
+    const coinsEarned = Math.max(1, Math.floor((10 + (sets ? sets * 2 : 0)) * POINT_EARNING_SCALE)); // 10 base + 2 per set then scaled
     const newCoins = state.coins + coinsEarned;
 
     const newWorkout: Workout = {
