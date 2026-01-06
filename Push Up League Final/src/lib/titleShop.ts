@@ -6,7 +6,23 @@ export interface Title {
   description: string;
 }
 
-export const TITLE_CATALOG: Title[] = [
+const CATEGORY_ORDER: Record<Title['category'], number> = {
+  common: 0,
+  uncommon: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+};
+
+const CATEGORY_WEIGHT: Record<Title['category'], number> = {
+  common: 1,
+  uncommon: 1.6,
+  rare: 2.5,
+  epic: 4,
+  legendary: 6,
+};
+
+const BASE_TITLE_CATALOG: Title[] = [
   // LEGENDARY TITLES (250-500 coins)
   { id: 'leg_001', name: 'The Unstoppable', price: 500, category: 'legendary', description: 'Nothing can break your will' },
   { id: 'leg_002', name: 'Supreme Commander', price: 500, category: 'legendary', description: 'Lead from the front' },
@@ -257,6 +273,35 @@ export const TITLE_CATALOG: Title[] = [
   { id: 'com_109', name: 'Strength Adherent', price: 25, category: 'common', description: 'Follow strength' },
   { id: 'com_110', name: 'The Logging', price: 25, category: 'common', description: 'Keep records' },
 ];
+
+const applySteepCurve = (titles: Title[]): Title[] => {
+  const sorted = [...titles].sort((a, b) => {
+    if (CATEGORY_ORDER[a.category] !== CATEGORY_ORDER[b.category]) {
+      return CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category];
+    }
+    return a.price - b.price;
+  });
+
+  const total = Math.max(sorted.length - 1, 1);
+  const scaledPriceById = new Map<string, number>();
+
+  sorted.forEach((title, index) => {
+    const rank = index / total; // 0 -> cheapest, 1 -> most expensive
+    const baseScale = 500; // keeps low tiers affordable (~10k-20k)
+    const spread = 3500; // controls how fast prices explode
+    const curve = Math.pow(rank, 3); // cubic for steep growth
+    const weight = CATEGORY_WEIGHT[title.category];
+    const scaledPrice = Math.round(title.price * (baseScale + curve * spread * weight));
+    scaledPriceById.set(title.id, scaledPrice);
+  });
+
+  return titles.map((title) => ({
+    ...title,
+    price: scaledPriceById.get(title.id) ?? title.price,
+  }));
+};
+
+export const TITLE_CATALOG: Title[] = applySteepCurve(BASE_TITLE_CATALOG);
 
 export const getCategoryColor = (category: Title['category']): string => {
   switch (category) {
