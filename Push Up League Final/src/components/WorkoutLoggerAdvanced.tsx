@@ -280,7 +280,7 @@ export const WorkoutLoggerAdvanced = () => {
 
                     {/* Dropdown */}
                     {isTypeSelectorOpen && (
-                      <div className="absolute z-[9999] mt-2 w-[150%] sm:w-[400px] bg-dark-card/95 backdrop-blur-md border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden left-0 sm:left-auto sm:right-0 sm:translate-x-0 -translate-x-[25%] sm:-translate-x-0">
+                      <div className="absolute z-[9999] mt-2 w-[200%] sm:w-[400px] bg-dark-card/95 backdrop-blur-md border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden right-0 sm:left-auto sm:right-0 sm:translate-x-0 translate-x-[50%] sm:translate-x-0">
                         {/* Search Input */}
                         <div className="sticky top-0 p-3 bg-dark-card/95 backdrop-blur-md border-b border-dark-border">
                           <div className="relative">
