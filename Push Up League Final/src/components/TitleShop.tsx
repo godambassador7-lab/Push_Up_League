@@ -24,8 +24,10 @@ export const TitleShop = () => {
     return matchesCategory && matchesSearch;
   });
 
+  const sortedFilteredTitles = [...filteredTitles].sort((a, b) => b.price - a.price);
+
   // Group by category
-  const groupedTitles = filteredTitles.reduce((acc, title) => {
+  const groupedTitles = sortedFilteredTitles.reduce((acc, title) => {
     if (!acc[title.category]) {
       acc[title.category] = [];
     }
@@ -181,7 +183,7 @@ export const TitleShop = () => {
       ) : (
         // Show selected category only
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTitles.map((title) => (
+          {sortedFilteredTitles.map((title) => (
             <TitleCard
               key={title.id}
               title={title}

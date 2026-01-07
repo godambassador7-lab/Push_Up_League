@@ -275,6 +275,7 @@ export class SyncManager {
       personalBest: store.personalBest,
       dailyGoal: store.dailyGoal,
       streakFreezes: store.streakFreezes,
+      powerUpPurchaseHistory: store.powerUpPurchaseHistory,
       lastSyncTimestamp: this.lastSyncTimestamp,
     };
 
@@ -313,6 +314,7 @@ export class SyncManager {
           personalBest: data.personalBest || 0,
           dailyGoal: data.dailyGoal || 50,
           streakFreezes: data.streakFreezes || 1,
+          powerUpPurchaseHistory: data.powerUpPurchaseHistory || useEnhancedStore.getState().powerUpPurchaseHistory,
         });
 
         this.lastSyncTimestamp = data.lastSyncTimestamp || 0;

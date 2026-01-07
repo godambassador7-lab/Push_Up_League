@@ -8,6 +8,10 @@ interface LoadingScreenProps {
 
 export const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
   const [progress, setProgress] = useState(0);
+  const basePath = process.env.NODE_ENV === 'production'
+    ? (process.env.NEXT_PUBLIC_BASE_PATH || '')
+    : '';
+  const logoSrc = `${basePath}/logo.png`;
 
   useEffect(() => {
     const duration = 1500; // 1.5 seconds total
@@ -44,7 +48,7 @@ export const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
         {/* Logo */}
         <div className="relative w-32 h-32 animate-fade-in">
           <img
-            src="/Push_Up_League/logo.png"
+            src={logoSrc}
             alt="Push Up League"
             className="w-full h-full object-contain drop-shadow-2xl"
           />

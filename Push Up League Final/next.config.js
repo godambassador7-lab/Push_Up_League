@@ -1,10 +1,13 @@
-/** @type {import('next').NextConfig} */
+﻿/** @type {import('next').NextConfig} */
+const isProd = process.env.NODE_ENV === 'production';
+const basePath = isProd ? (process.env.NEXT_PUBLIC_BASE_PATH || '') : '';
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'export',
-  basePath: '/Push_Up_League',
-  assetPrefix: '/Push_Up_League',
+  ...(isProd ? { output: 'export' } : {}),
+  basePath,
+  assetPrefix: isProd && basePath ? basePath : undefined,
   trailingSlash: true,
   images: {
     unoptimized: true,
@@ -16,6 +19,13 @@ const nextConfig = {
   typescript: {
     // Allow build to proceed even if stray TS files in /public fail type checks
     ignoreBuildErrors: true,
+  },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Avoid eval-source-map strings that can choke on unexpected characters.
+      config.devtool = 'source-map';
+    }
+    return config;
   },
 };
 

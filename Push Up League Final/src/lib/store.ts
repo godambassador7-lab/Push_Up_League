@@ -190,11 +190,22 @@ export const useUserStore = create<UserState>((set, get) => ({
     // Calculate streak
     let newStreak = state.currentStreak;
     let streakBroken = false;
+    let adjustedTotalXp = state.totalXp;
+    let adjustedCoins = state.coins;
 
     if (lastDate) {
       const last = new Date(lastDate);
       const now = new Date(today);
       const daysDiff = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+      const missedDays = Math.max(0, daysDiff - 1);
+
+      if (missedDays > 0) {
+        const multiplier = Math.pow(2, missedDays) - 1;
+        const xpPenalty = 2 * multiplier;
+        const coinPenalty = 1 * multiplier;
+        adjustedTotalXp = Math.max(0, adjustedTotalXp - xpPenalty);
+        adjustedCoins = Math.max(0, adjustedCoins - coinPenalty);
+      }
 
       if (daysDiff === 0) {
         // Same day, don't increment
@@ -215,7 +226,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     // Calculate XP
     const xpEarned = calculateXP(pushups, newStreak, sets, challengeBonus);
-    const newTotalXp = state.totalXp + xpEarned;
+    const newTotalXp = adjustedTotalXp + xpEarned;
 
     // Calculate rank
     let newRank = 1;
@@ -230,7 +241,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     // Add coins
     const coinsEarned = Math.max(1, Math.floor((10 + (sets ? sets * 2 : 0)) * POINT_EARNING_SCALE)); // 10 base + 2 per set then scaled
-    const newCoins = state.coins + coinsEarned;
+    const newCoins = adjustedCoins + coinsEarned;
 
     const newWorkout: Workout = {
       id: uuidv4(),

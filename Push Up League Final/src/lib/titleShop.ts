@@ -42,13 +42,13 @@ const BASE_TITLE_CATALOG: Title[] = [
   { id: 'leg_016', name: 'War Machine', price: 325, category: 'legendary', description: 'Built for battle' },
   { id: 'leg_017', name: 'The Relentless', price: 300, category: 'legendary', description: 'Never gives up' },
   { id: 'leg_018', name: 'Beast Mode', price: 300, category: 'legendary', description: 'Unleash the animal' },
-  { id: 'leg_019', name: 'Soul Crusher', price: 275, category: 'legendary', description: 'Break their spirit' },
+  { id: 'leg_019', name: 'Spirit Breaker', price: 275, category: 'legendary', description: 'Unshakable will, unbroken foes' },
   { id: 'leg_020', name: 'Iron Emperor', price: 275, category: 'legendary', description: 'Rule with strength' },
-  { id: 'leg_021', name: 'Thunder God', price: 250, category: 'legendary', description: 'Wrath from above' },
+  { id: 'leg_021', name: 'Thunder Lord', price: 250, category: 'legendary', description: 'Command the storm with force' },
   { id: 'leg_022', name: 'Blood Diamond', price: 250, category: 'legendary', description: 'Forged in combat' },
-  { id: 'leg_023', name: 'Nightmare Fuel', price: 250, category: 'legendary', description: 'Fear incarnate' },
+  { id: 'leg_023', name: 'Force of Nature', price: 250, category: 'legendary', description: 'Power that moves mountains' },
   { id: 'leg_024', name: 'The Destroyer', price: 250, category: 'legendary', description: 'Leave nothing standing' },
-  { id: 'leg_025', name: 'Death Dealer', price: 250, category: 'legendary', description: 'Final judgment' },
+  { id: 'leg_025', name: 'Final Vanguard', price: 250, category: 'legendary', description: 'End the fight with certainty' },
 
   // EPIC TITLES (150-245 coins)
   { id: 'epic_001', name: 'Battle Tested', price: 225, category: 'epic', description: 'Proven in combat' },
@@ -75,7 +75,7 @@ const BASE_TITLE_CATALOG: Title[] = [
   { id: 'epic_022', name: 'Thunder Strike', price: 150, category: 'epic', description: 'Lightning fast' },
   { id: 'epic_023', name: 'Dark Champion', price: 150, category: 'epic', description: 'Victory at any cost' },
   { id: 'epic_024', name: 'Rage Incarnate', price: 150, category: 'epic', description: 'Anger made flesh' },
-  { id: 'epic_025', name: 'Doom Bringer', price: 150, category: 'epic', description: 'Herald of destruction' },
+  { id: 'epic_025', name: 'Ruin Herald', price: 150, category: 'epic', description: 'Harbinger of collapse' },
   { id: 'epic_026', name: 'Steel Typhoon', price: 150, category: 'epic', description: 'Unstoppable storm' },
   { id: 'epic_027', name: 'Ghost Striker', price: 150, category: 'epic', description: 'Invisible assault' },
   { id: 'epic_028', name: 'Blood Moon', price: 150, category: 'epic', description: 'Ominous power' },
@@ -214,8 +214,8 @@ const BASE_TITLE_CATALOG: Title[] = [
   { id: 'com_050', name: 'The Beginner', price: 25, category: 'common', description: 'First steps' },
   { id: 'com_051', name: 'Gym Member', price: 25, category: 'common', description: 'Part of the club' },
   { id: 'com_052', name: 'The Aspiring', price: 25, category: 'common', description: 'Dream big' },
-  { id: 'com_053', name: 'Strength Seeker', price: 25, category: 'common', description: 'On the hunt' },
-  { id: 'com_054', name: 'The Starter', price: 25, category: 'common', description: 'Day one' },
+  { id: 'com_053', name: 'Strength Chaser', price: 25, category: 'common', description: 'On the hunt' },
+  { id: 'com_054', name: 'Day One', price: 25, category: 'common', description: 'Start the climb' },
   { id: 'com_055', name: 'Push-Up Person', price: 25, category: 'common', description: 'Doing the work' },
   { id: 'com_056', name: 'The New', price: 25, category: 'common', description: 'Fresh blood' },
   { id: 'com_057', name: 'Fitness Follower', price: 25, category: 'common', description: 'On the path' },
@@ -285,14 +285,30 @@ const applySteepCurve = (titles: Title[]): Title[] => {
   const total = Math.max(sorted.length - 1, 1);
   const scaledPriceById = new Map<string, number>();
 
+  const roundPrice = (value: number) => {
+    const abs = Math.max(value, 0);
+    let step = 1;
+
+    if (abs < 1_000) step = 10;
+    else if (abs < 10_000) step = 50;
+    else if (abs < 100_000) step = 100;
+    else if (abs < 1_000_000) step = 1_000;
+    else if (abs < 10_000_000) step = 10_000;
+    else step = 100_000;
+
+    return Math.round(value / step) * step;
+  };
+
+  const minPrice = 200;
+  const maxPrice = 2_500_000;
+  const curvePower = 4.5;
+
   sorted.forEach((title, index) => {
     const rank = index / total; // 0 -> cheapest, 1 -> most expensive
-    const baseScale = 500; // keeps low tiers affordable (~10k-20k)
-    const spread = 3500; // controls how fast prices explode
-    const curve = Math.pow(rank, 3); // cubic for steep growth
-    const weight = CATEGORY_WEIGHT[title.category];
-    const scaledPrice = Math.round(title.price * (baseScale + curve * spread * weight));
-    scaledPriceById.set(title.id, scaledPrice);
+    const curve = Math.pow(rank, curvePower);
+    const scaledPrice = minPrice + (maxPrice - minPrice) * curve;
+    const roundedPrice = roundPrice(scaledPrice);
+    scaledPriceById.set(title.id, roundedPrice);
   });
 
   return titles.map((title) => ({
@@ -315,6 +331,20 @@ export const getCategoryColor = (category: Title['category']): string => {
       return 'text-success border-success bg-success/10';
     case 'common':
       return 'text-gray-400 border-gray-400 bg-gray-400/10';
+  }
+};
+
+export const getCategoryGlowClass = (category: Title['category']): string => {
+  switch (category) {
+    case 'legendary':
+      return 'shadow-[0_0_14px_rgba(255,193,7,0.55)]';
+    case 'epic':
+      return 'shadow-[0_0_14px_rgba(168,85,247,0.55)]';
+    case 'rare':
+      return 'shadow-[0_0_14px_rgba(0,153,255,0.55)]';
+    case 'uncommon':
+    case 'common':
+      return '';
   }
 };
 

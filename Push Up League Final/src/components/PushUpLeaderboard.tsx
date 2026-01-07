@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Crown, TrendingUp } from 'lucide-react';
 import { getStandardLeaderboard, getWorldRecordLeaderboard } from '@/lib/firebase';
+import { TITLE_CATALOG, getCategoryColor, getCategoryGlowClass } from '@/lib/titleShop';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 
 interface LeaderboardEntry {
@@ -34,6 +35,10 @@ export const PushUpLeaderboard = () => {
   const currentRank = useEnhancedStore((state) => state.currentRank);
   const workouts = useEnhancedStore((state) => state.workouts);
   const isWorldRecordCandidate = useEnhancedStore((state) => state.isWorldRecordCandidate);
+  const activeTitle = useEnhancedStore((state) => state.activeTitle);
+  const activeTitleData = activeTitle ? TITLE_CATALOG.find(t => t.id === activeTitle) : null;
+  const activeTitleClass = activeTitleData ? getCategoryColor(activeTitleData.category) : '';
+  const activeTitleGlow = activeTitleData ? getCategoryGlowClass(activeTitleData.category) : '';
 
   const RANK_TITLES = ['', 'Initiate', 'Iron Hand', 'Vanguard', 'Centurion', 'Titan', 'Ascendant', 'Mythic', 'Immortal'];
 
@@ -271,6 +276,11 @@ export const PushUpLeaderboard = () => {
                         {entry.username}
                         {isCurrentUser && (
                           <span className="text-xs px-2 py-0.5 bg-accent/20 text-accent rounded">YOU</span>
+                        )}
+                        {isCurrentUser && activeTitleData && (
+                          <span className={`text-xs px-2 py-0.5 rounded border ${activeTitleClass} ${activeTitleGlow}`}>
+                            {activeTitleData.name}
+                          </span>
                         )}
                         {entry.isWorldRecord && (
                           <Crown size={16} className="text-warning flex-shrink-0" />

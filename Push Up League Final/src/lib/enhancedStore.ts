@@ -116,6 +116,7 @@ export interface UserState {
 
   // Power-Ups & Quests
   activePowerUps: ActivePowerUp[];
+  powerUpPurchaseHistory: Record<PowerUpType, string[]>;
   quests: Quest[];
   totalLifetimePushups: number;
   variationStats: Record<PushUpType, number>; // Track reps per variation
@@ -153,6 +154,24 @@ export interface UserState {
   updateDailyGoal: () => void;
 }
 
+const getPowerUpPurchaseDefaults = () => ({
+  streak_freeze: [],
+  double_xp: [],
+  challenge_reroll: [],
+  goal_reducer: [],
+});
+
+const getMissedDayPenalty = (missedDays: number) => {
+  if (missedDays <= 0) {
+    return { xpPenalty: 0, coinPenalty: 0 };
+  }
+  const multiplier = Math.pow(2, missedDays) - 1;
+  return {
+    xpPenalty: 2 * multiplier,
+    coinPenalty: 1 * multiplier,
+  };
+};
+
 const getInitialState = () => ({
   userId: uuidv4(),
   username: 'Champion',
@@ -177,6 +196,7 @@ const getInitialState = () => ({
   purchasedTitles: [],
   activeTitle: null,
   activePowerUps: [],
+  powerUpPurchaseHistory: getPowerUpPurchaseDefaults(),
   quests: [],
   totalLifetimePushups: 0,
   variationStats: {
@@ -283,14 +303,23 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       };
     }
 
-    // Calculate streak
+    // Calculate streak + missed day penalties
     const lastDate = state.lastWorkoutDate;
     let newStreak = state.currentStreak;
+    let adjustedTotalXp = state.totalXp;
+    let adjustedCoins = state.coins;
 
     if (lastDate) {
       const last = new Date(lastDate);
       const now = new Date(today);
       const daysDiff = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+      const missedDays = Math.max(0, daysDiff - 1);
+
+      if (missedDays > 0) {
+        const { xpPenalty, coinPenalty } = getMissedDayPenalty(missedDays);
+        adjustedTotalXp = Math.max(0, adjustedTotalXp - xpPenalty);
+        adjustedCoins = Math.max(0, adjustedCoins - coinPenalty);
+      }
 
       if (daysDiff === 0) {
         newStreak = state.currentStreak;
@@ -324,7 +353,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     }
 
     const xpEarned = baseXP;
-    const newTotalXp = state.totalXp + xpEarned;
+    const newTotalXp = adjustedTotalXp + xpEarned;
 
     // Calculate rank
     let newRank = 1;
@@ -377,7 +406,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     }
 
     const coinsEarned = Math.max(1, Math.floor(baseCoins * POINT_EARNING_SCALE));
-    const newCoins = state.coins + coinsEarned;
+    const newCoins = adjustedCoins + coinsEarned;
 
     // Update variation stats
     const newVariationStats = { ...state.variationStats };
@@ -537,9 +566,18 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     const state = get();
     const { POWER_UPS } = require('./powerUps');
     const powerUp = POWER_UPS[powerUpType];
+    const now = new Date();
+    const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    const purchaseHistory = state.powerUpPurchaseHistory[powerUpType] || [];
+    const recentPurchases = purchaseHistory.filter((stamp) => new Date(stamp) >= windowStart);
+    const windowLimit = powerUpType === 'streak_freeze' ? 1 : 3;
 
     if (!powerUp) {
       return { success: false, message: 'Invalid power-up type!' };
+    }
+
+    if (recentPurchases.length >= windowLimit) {
+      return { success: false, message: `7-day limit reached (${windowLimit}) for ${powerUp.name}.` };
     }
 
     // Check if enough coins
@@ -549,19 +587,20 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
     // Check max purchase limit for streak freezes
     if (powerUpType === 'streak_freeze') {
-      if (state.streakFreezes >= (powerUp.maxPurchase || 99)) {
-        return { success: false, message: `Maximum ${powerUp.maxPurchase} streak freezes allowed!` };
-      }
       // Purchase streak freeze - add to count
-      set({
+      set((state) => ({
         coins: state.coins - powerUp.price,
         streakFreezes: state.streakFreezes + 1,
-      });
+        powerUpPurchaseHistory: {
+          ...state.powerUpPurchaseHistory,
+          [powerUpType]: [...recentPurchases, now.toISOString()],
+        },
+      }));
       return { success: true, message: 'Streak freeze purchased!' };
     }
 
     // For other power-ups, purchase and add to inventory
-    set({
+    set((state) => ({
       coins: state.coins - powerUp.price,
       activePowerUps: [
         ...state.activePowerUps,
@@ -571,7 +610,11 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
           used: false,
         },
       ],
-    });
+      powerUpPurchaseHistory: {
+        ...state.powerUpPurchaseHistory,
+        [powerUpType]: [...recentPurchases, now.toISOString()],
+      },
+    }));
 
     return { success: true, message: `${powerUp.name} purchased!` };
   },

@@ -45,6 +45,7 @@ export function AppProvider({ children }: AppProviderProps) {
             personalBest: state.personalBest,
             dailyGoal: state.dailyGoal,
             streakFreezes: state.streakFreezes,
+            powerUpPurchaseHistory: state.powerUpPurchaseHistory,
           };
 
           localStorage.setItem('pushup-league-data', JSON.stringify(dataToSave));
@@ -85,6 +86,7 @@ export function AppProvider({ children }: AppProviderProps) {
             personalBest: data.personalBest || 0,
             dailyGoal: data.dailyGoal || 50,
             streakFreezes: data.streakFreezes || 1,
+            powerUpPurchaseHistory: data.powerUpPurchaseHistory || useEnhancedStore.getState().powerUpPurchaseHistory,
           });
         }
       } catch (error) {

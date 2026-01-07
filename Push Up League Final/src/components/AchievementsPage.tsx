@@ -80,7 +80,7 @@ export const AchievementsPage = () => {
       <div className="glass glass-border rounded-lg p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-hero text-accent text-shadow-glow">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-hero text-accent">
               Achievements
             </h1>
             <p className="text-sm sm:text-base text-gray-400 mt-2">
@@ -104,9 +104,9 @@ export const AchievementsPage = () => {
             <span className="text-gray-400">Overall Completion</span>
             <span className="text-accent font-bold">{completionPercent}%</span>
           </div>
-          <div className="h-3 sm:h-4 bg-dark-card rounded-full overflow-hidden border border-dark-border">
+          <div className="h-3 sm:h-4 bg-dark-card rounded-full overflow-hidden border border-dark-border relative">
             <div
-              className="h-full bg-gradient-to-r from-accent via-electric-blue to-cyan-bright rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-accent via-electric-blue to-cyan-bright rounded-full transition-all duration-500 relative overflow-hidden"
               style={{ width: `${completionPercent}%` }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine" />

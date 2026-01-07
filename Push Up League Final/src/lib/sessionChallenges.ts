@@ -36,7 +36,7 @@ export const SESSION_CHALLENGES: SessionChallenge[] = [
   // TIME LIMIT CHALLENGES
   {
     id: 'time_10min',
-    name: 'Speed Demon',
+    name: 'Speedster',
     description: 'Complete your workout in under 10 minutes',
     type: 'time_limit',
     requirement: { maxMinutes: 10 },

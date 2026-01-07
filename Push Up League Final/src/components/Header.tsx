@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUserStore } from '@/lib/store';
 import { useEnhancedStore } from '@/lib/enhancedStore';
-import { TITLE_CATALOG } from '@/lib/titleShop';
+import { TITLE_CATALOG, getCategoryColor, getCategoryGlowClass } from '@/lib/titleShop';
 import { RankBadge } from './RankBadge';
 import { Menu } from './Menu';
 import { MenuIcon, Star } from 'lucide-react';
@@ -11,6 +11,10 @@ import { StreakFlame } from './StreakFlame';
 
 export const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
+  const basePath = process.env.NODE_ENV === 'production'
+    ? (process.env.NEXT_PUBLIC_BASE_PATH || '')
+    : '';
+  const logoSrc = `${basePath}/logo.png`;
 
   const username = useUserStore((state) => state.username);
   const currentRank = useUserStore((state) => state.currentRank);
@@ -19,6 +23,8 @@ export const Header = () => {
   const activeTitle = useEnhancedStore((state) => state.activeTitle);
 
   const activeTitleData = activeTitle ? TITLE_CATALOG.find(t => t.id === activeTitle) : null;
+  const activeTitleClass = activeTitleData ? getCategoryColor(activeTitleData.category) : '';
+  const activeTitleGlow = activeTitleData ? getCategoryGlowClass(activeTitleData.category) : '';
 
   const today = new Date().toISOString().split('T')[0];
   const isBroken = lastWorkoutDate !== today;
@@ -30,7 +36,7 @@ export const Header = () => {
           {/* Logo and Title */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <img
-              src="/Push_Up_League/logo.png"
+              src={logoSrc}
               alt="Push Up League Logo"
               className="w-12 h-12 sm:w-[72px] sm:h-[72px] rounded-lg flex-shrink-0"
             />
@@ -45,7 +51,7 @@ export const Header = () => {
               <div className="flex items-center gap-2 justify-end">
                 <div className="text-sm font-bold">{username}</div>
                 {activeTitleData && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 glass-light border border-warning/50 rounded text-xs text-warning">
+                  <div className={`flex items-center gap-1 px-2 py-0.5 glass-light border rounded text-xs ${activeTitleClass} ${activeTitleGlow}`}>
                     <Star size={10} fill="currentColor" />
                     <span className="font-bold">{activeTitleData.name}</span>
                   </div>
