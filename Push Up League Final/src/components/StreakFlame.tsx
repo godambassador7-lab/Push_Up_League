@@ -68,27 +68,27 @@ export const StreakFlame = ({ streak, isBroken, size = 12 }: StreakFlameProps) =
         @keyframes flame-regular {
           0%, 100% {
             opacity: 1;
-            transform: scale(1) rotate(0deg);
+            transform: scale(1) rotate(0deg) translateY(0);
             filter: brightness(1);
           }
           20% {
             opacity: 0.85;
-            transform: scale(1.1) rotate(-2deg);
+            transform: scale(1.12) rotate(-3deg) translateY(-1px);
             filter: brightness(1.1);
           }
           40% {
             opacity: 1;
-            transform: scale(0.95) rotate(2deg);
+            transform: scale(0.94) rotate(3deg) translateY(1px);
             filter: brightness(0.95);
           }
           60% {
             opacity: 0.9;
-            transform: scale(1.05) rotate(-1deg);
+            transform: scale(1.08) rotate(-2deg) translateY(-1px);
             filter: brightness(1.05);
           }
           80% {
             opacity: 1;
-            transform: scale(0.98) rotate(1deg);
+            transform: scale(0.98) rotate(2deg) translateY(1px);
             filter: brightness(0.98);
           }
         }
@@ -96,27 +96,27 @@ export const StreakFlame = ({ streak, isBroken, size = 12 }: StreakFlameProps) =
         @keyframes flame-medium {
           0%, 100% {
             opacity: 1;
-            transform: scale(1) rotate(0deg);
+            transform: scale(1) rotate(0deg) translateY(0);
             filter: brightness(1);
           }
           15% {
             opacity: 0.8;
-            transform: scale(1.15) rotate(-3deg);
+            transform: scale(1.18) rotate(-4deg) translateY(-1px);
             filter: brightness(1.2);
           }
           35% {
             opacity: 1;
-            transform: scale(0.9) rotate(3deg);
+            transform: scale(0.88) rotate(4deg) translateY(1px);
             filter: brightness(0.9);
           }
           55% {
             opacity: 0.85;
-            transform: scale(1.1) rotate(-2deg);
+            transform: scale(1.14) rotate(-3deg) translateY(-1px);
             filter: brightness(1.1);
           }
           75% {
             opacity: 1;
-            transform: scale(0.95) rotate(2deg);
+            transform: scale(0.94) rotate(3deg) translateY(1px);
             filter: brightness(0.95);
           }
         }
@@ -124,32 +124,32 @@ export const StreakFlame = ({ streak, isBroken, size = 12 }: StreakFlameProps) =
         @keyframes flame-strong {
           0%, 100% {
             opacity: 1;
-            transform: scale(1) rotate(0deg);
+            transform: scale(1) rotate(0deg) translateY(0);
             filter: brightness(1) drop-shadow(0 0 4px currentColor);
           }
           12% {
             opacity: 0.75;
-            transform: scale(1.2) rotate(-4deg);
+            transform: scale(1.22) rotate(-5deg) translateY(-2px);
             filter: brightness(1.3) drop-shadow(0 0 8px currentColor);
           }
           28% {
             opacity: 1;
-            transform: scale(0.85) rotate(4deg);
+            transform: scale(0.84) rotate(5deg) translateY(1px);
             filter: brightness(0.85) drop-shadow(0 0 2px currentColor);
           }
           45% {
             opacity: 0.8;
-            transform: scale(1.15) rotate(-3deg);
+            transform: scale(1.18) rotate(-4deg) translateY(-2px);
             filter: brightness(1.2) drop-shadow(0 0 6px currentColor);
           }
           65% {
             opacity: 1;
-            transform: scale(0.9) rotate(3deg);
+            transform: scale(0.88) rotate(4deg) translateY(1px);
             filter: brightness(0.9) drop-shadow(0 0 3px currentColor);
           }
           82% {
             opacity: 0.9;
-            transform: scale(1.1) rotate(-2deg);
+            transform: scale(1.12) rotate(-3deg) translateY(-1px);
             filter: brightness(1.1) drop-shadow(0 0 5px currentColor);
           }
         }
@@ -157,52 +157,52 @@ export const StreakFlame = ({ streak, isBroken, size = 12 }: StreakFlameProps) =
         @keyframes flame-intense {
           0%, 100% {
             opacity: 1;
-            transform: scale(1) rotate(0deg);
+            transform: scale(1) rotate(0deg) translateY(0);
             filter: brightness(1) drop-shadow(0 0 6px rgba(255,255,255,0.8));
           }
           10% {
             opacity: 0.7;
-            transform: scale(1.25) rotate(-5deg);
+            transform: scale(1.28) rotate(-6deg) translateY(-2px);
             filter: brightness(1.4) drop-shadow(0 0 12px rgba(255,255,255,1));
           }
           22% {
             opacity: 1;
-            transform: scale(0.8) rotate(5deg);
+            transform: scale(0.78) rotate(6deg) translateY(2px);
             filter: brightness(0.8) drop-shadow(0 0 4px rgba(255,255,255,0.6));
           }
           38% {
             opacity: 0.75;
-            transform: scale(1.2) rotate(-4deg);
+            transform: scale(1.24) rotate(-5deg) translateY(-2px);
             filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,255,0.9));
           }
           55% {
             opacity: 1;
-            transform: scale(0.85) rotate(4deg);
+            transform: scale(0.84) rotate(5deg) translateY(2px);
             filter: brightness(0.85) drop-shadow(0 0 5px rgba(255,255,255,0.7));
           }
           70% {
             opacity: 0.8;
-            transform: scale(1.15) rotate(-3deg);
+            transform: scale(1.18) rotate(-4deg) translateY(-2px);
             filter: brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,0.85));
           }
           85% {
             opacity: 1;
-            transform: scale(0.95) rotate(2deg);
+            transform: scale(0.94) rotate(3deg) translateY(1px);
             filter: brightness(0.95) drop-shadow(0 0 6px rgba(255,255,255,0.75));
           }
         }
 
         .animate-flame-regular {
-          animation: flame-regular 1.5s ease-in-out infinite;
+          animation: flame-regular 1.2s ease-in-out infinite;
         }
         .animate-flame-medium {
-          animation: flame-medium 1.3s ease-in-out infinite;
+          animation: flame-medium 1.05s ease-in-out infinite;
         }
         .animate-flame-strong {
-          animation: flame-strong 1.1s ease-in-out infinite;
+          animation: flame-strong 0.95s ease-in-out infinite;
         }
         .animate-flame-intense {
-          animation: flame-intense 0.9s ease-in-out infinite;
+          animation: flame-intense 0.8s ease-in-out infinite;
         }
       `}</style>
     </div>

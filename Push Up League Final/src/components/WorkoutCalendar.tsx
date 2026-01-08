@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
-import { ChevronLeft, ChevronRight, Lock, CheckCircle, Target } from 'lucide-react';
+import { calculateCalories, calculateMultiSetCalories, DEFAULT_BODY_WEIGHT_KG } from '@/lib/calorieCalculator';
+import { getPushUpTypeData } from '@/lib/pushupTypes';
+import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target } from 'lucide-react';
 
 export const WorkoutCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const workouts = useEnhancedStore((state) => state.workouts);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const lockDay = useEnhancedStore((state) => state.lockDay);
@@ -37,6 +40,40 @@ export const WorkoutCalendar = () => {
   const getWorkoutForDate = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return workouts.find(w => w.date === dateStr);
+  };
+
+  const getWorkoutBreakdown = (workout: NonNullable<ReturnType<typeof getWorkoutForDate>>) => {
+    if (workout.sets && workout.sets.length > 0) {
+      const grouped = new Map<string, { reps: number }>();
+      workout.sets.forEach((set) => {
+        const key = set.type;
+        const current = grouped.get(key) || { reps: 0 };
+        grouped.set(key, { reps: current.reps + set.reps });
+      });
+      return Array.from(grouped.entries()).map(([type, data]) => ({
+        type,
+        reps: data.reps,
+        calories: calculateCalories(data.reps, type, DEFAULT_BODY_WEIGHT_KG).calories,
+        label: getPushUpTypeData(type).name,
+      }));
+    }
+
+    return [{
+      type: 'standard',
+      reps: workout.pushups,
+      calories: calculateCalories(workout.pushups, 'standard', DEFAULT_BODY_WEIGHT_KG).calories,
+      label: getPushUpTypeData('standard').name,
+    }];
+  };
+
+  const getWorkoutCalories = (workout: NonNullable<ReturnType<typeof getWorkoutForDate>>) => {
+    if (workout.sets && workout.sets.length > 0) {
+      return calculateMultiSetCalories(
+        workout.sets.map((set) => ({ reps: set.reps, pushupType: set.type })),
+        DEFAULT_BODY_WEIGHT_KG
+      );
+    }
+    return calculateCalories(workout.pushups, 'standard', DEFAULT_BODY_WEIGHT_KG).calories;
   };
 
   const handleLockDay = (day: number) => {
@@ -118,6 +155,9 @@ export const WorkoutCalendar = () => {
           const hasWorkout = !!workout;
           const isLocked = workout?.isLocked || false;
           const metGoal = workout && workout.pushups >= dailyGoal;
+          const isExpanded = expandedDay === day;
+          const caloriesBurned = workout ? getWorkoutCalories(workout) : 0;
+          const breakdown = workout ? getWorkoutBreakdown(workout) : [];
 
           return (
             <div
@@ -128,7 +168,7 @@ export const WorkoutCalendar = () => {
                   : hasWorkout
                   ? 'glass glass-border'
                   : 'glass-light border border-dark-border'
-              } ${isFuture ? 'opacity-50' : ''}`}
+              } ${isFuture ? 'opacity-50' : ''} ${isExpanded ? 'z-20 overflow-visible' : ''}`}
             >
               {/* Day number */}
               <div className="absolute top-1 left-1 text-xs font-bold text-gray-400">
@@ -149,6 +189,16 @@ export const WorkoutCalendar = () => {
                   </>
                 )}
 
+                {hasWorkout && (
+                  <button
+                    onClick={() => setExpandedDay(isExpanded ? null : day)}
+                    className="absolute bottom-1 left-1 p-1 glass-light rounded hover:bg-accent/20 transition text-gray-400 hover:text-accent"
+                    title={isExpanded ? 'Hide details' : 'Show details'}
+                  >
+                    <ChevronDown size={10} className={`${isExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                )}
+
                 {/* Lock button */}
                 {hasWorkout && !isLocked && !isFuture && (
                   <button
@@ -166,6 +216,26 @@ export const WorkoutCalendar = () => {
                   </div>
                 )}
               </div>
+
+              {hasWorkout && isExpanded && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 max-w-[80vw] glass border border-dark-border rounded-lg p-3 text-xs text-gray-300 shadow-xl">
+                  <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-gray-400 mb-2">
+                    <span>Workout Details</span>
+                    <span>{caloriesBurned.toFixed(1)} cal</span>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {breakdown.map((item) => (
+                      <div key={item.type} className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-white truncate">{item.label}</div>
+                          <div className="text-[11px] text-gray-400">{item.reps} reps</div>
+                        </div>
+                        <div className="text-[11px] text-warning font-bold">{item.calories.toFixed(1)} cal</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
