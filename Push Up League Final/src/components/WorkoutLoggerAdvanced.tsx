@@ -280,7 +280,7 @@ export const WorkoutLoggerAdvanced = () => {
 
                     {/* Dropdown */}
                     {isTypeSelectorOpen && (
-                      <div className="absolute z-[9999] mt-2 bg-dark-card/95 backdrop-blur-md border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden left-1/2 -translate-x-1/2 w-[400px] max-w-[calc(100vw-2rem)]">
+                      <div className="absolute z-[9999] mt-2 bg-dark-card/95 backdrop-blur-md border border-accent rounded-lg shadow-xl max-h-80 overflow-hidden left-1/2 -translate-x-1/2 w-[260px] sm:w-[400px] max-w-[calc(100vw-2rem)]">
                         {/* Search Input */}
                         <div className="sticky top-0 p-3 bg-dark-card/95 backdrop-blur-md border-b border-dark-border">
                           <div className="relative">
@@ -290,7 +290,7 @@ export const WorkoutLoggerAdvanced = () => {
                               placeholder="Search push-up types..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full pl-10 pr-3 py-2 glass-light border border-dark-border rounded text-sm text-white placeholder-gray-500 outline-none focus:border-accent"
+                              className="w-full pl-10 pr-3 py-2 glass-light border border-dark-border rounded text-base sm:text-sm text-white placeholder-gray-500 outline-none focus:border-accent"
                               autoFocus
                             />
                           </div>
