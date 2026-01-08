@@ -34,11 +34,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{ backgroundColor: '#0f1535' }}>
+    <html lang="en">
       <head>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body style={{ backgroundColor: '#0f1535' }}>
+      <body>
         <AppWrapper>
           {children}
         </AppWrapper>

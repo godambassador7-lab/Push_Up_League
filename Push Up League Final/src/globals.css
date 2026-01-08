@@ -16,15 +16,11 @@
 }
 
 html {
-  background: linear-gradient(135deg, #0a0e27 0%, #1a1f4d 50%, #0a0e27 100%);
-  background-attachment: fixed;
+  background-color: #0f1535;
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overflow-y: scroll;
   overflow-x: hidden;
-  /* Extend background into iOS safe areas */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 body {
@@ -36,6 +32,11 @@ body {
   position: relative;
   min-height: 100vh;
   min-height: -webkit-fill-available;
+  /* Extend body to cover safe areas */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  margin-top: calc(-1 * env(safe-area-inset-top));
+  margin-bottom: calc(-1 * env(safe-area-inset-bottom));
 }
 
 /* Prevent white overscroll/bounce background */
