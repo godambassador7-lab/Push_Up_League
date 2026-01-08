@@ -4,6 +4,7 @@ import { ProficiencyLevel, checkIntegrity, calculateDailyGoal, WORLD_RECORDS } f
 import { PushUpType } from './pushupTypes';
 import { ActivePowerUp, PowerUpType } from './powerUps';
 import { Quest } from './quests';
+import { getTodayBonus } from './dailyBonus';
 
 export interface WorkoutSet {
   reps: number;
@@ -369,17 +370,6 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     }
 
     const xpEarned = baseXP;
-    const newTotalXp = adjustedTotalXp + xpEarned;
-
-    // Calculate rank
-    let newRank = 1;
-    for (const rankData of RANK_LADDER) {
-      if (newTotalXp >= rankData.cumulativeXp) {
-        newRank = rankData.rank;
-      }
-    }
-
-    const currentRankXp = newTotalXp - (newRank > 1 ? RANK_LADDER[newRank - 2].cumulativeXp : 0);
 
     // NEW COIN CALCULATION with bonuses
     const { getStreakCoinMultiplier, GOAL_COMPLETION_BONUS, STREAK_PRESERVATION_BONUS } = require('./pushupTypes');
@@ -421,8 +411,29 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       baseCoins += STREAK_PRESERVATION_BONUS;
     }
 
-    const coinsEarned = Math.max(1, Math.floor(baseCoins * POINT_EARNING_SCALE));
+    // Apply daily bonus (2 random days per week)
+    const dailyBonus = getTodayBonus();
+    let finalXPEarned = xpEarned;
+    let finalCoinsEarned = baseCoins;
+
+    if (dailyBonus.active) {
+      finalXPEarned = Math.floor(xpEarned * dailyBonus.xpMultiplier);
+      finalCoinsEarned = Math.floor(baseCoins * dailyBonus.coinMultiplier);
+    }
+
+    const coinsEarned = Math.max(1, Math.floor(finalCoinsEarned * POINT_EARNING_SCALE));
     const newCoins = adjustedCoins + coinsEarned;
+    const finalNewTotalXp = adjustedTotalXp + finalXPEarned;
+
+    // Calculate rank based on final XP
+    let newRank = 1;
+    for (const rankData of RANK_LADDER) {
+      if (finalNewTotalXp >= rankData.cumulativeXp) {
+        newRank = rankData.rank;
+      }
+    }
+
+    const currentRankXp = finalNewTotalXp - (newRank > 1 ? RANK_LADDER[newRank - 2].cumulativeXp : 0);
 
     // Update variation stats
     const newVariationStats = { ...state.variationStats };
@@ -445,7 +456,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
               ...w,
               pushups: w.pushups + pushups,
               sets: workoutSets ? [...(w.sets || []), ...workoutSets] : w.sets,
-              xpEarned: w.xpEarned + xpEarned,
+              xpEarned: w.xpEarned + finalXPEarned,
               coinsEarned: w.coinsEarned + coinsEarned,
               goalCompleted: goalCompleted || w.goalCompleted,
               sessionDuration: sessionDuration || w.sessionDuration,
@@ -459,7 +470,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
         date: today,
         pushups,
         sets: workoutSets,
-        xpEarned,
+        xpEarned: finalXPEarned,
         coinsEarned,
         streakMultiplier: getStreakMultiplier(newStreak),
         challengeBonus: challengeBonus || false,
@@ -501,7 +512,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     ];
 
     set({
-      totalXp: newTotalXp,
+      totalXp: finalNewTotalXp,
       coins: newCoins,
       currentRank: newRank,
       currentRankXp,
@@ -519,11 +530,18 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     // Update daily goal
     get().updateDailyGoal();
 
+    let successMessage = integrityCheck.isWorldRecordTerritory
+      ? '⚠️ World Record Territory! Guinness World Records has been notified.'
+      : 'Workout logged successfully!';
+
+    // Add daily bonus message if active
+    if (dailyBonus.active) {
+      successMessage += ` ${dailyBonus.message}`;
+    }
+
     return {
       success: true,
-      message: integrityCheck.isWorldRecordTerritory
-        ? '⚠️ World Record Territory! Guinness World Records has been notified.'
-        : 'Workout logged successfully!',
+      message: successMessage,
       warnings: integrityCheck.warnings.length > 0 ? integrityCheck.warnings : undefined,
     };
   },
