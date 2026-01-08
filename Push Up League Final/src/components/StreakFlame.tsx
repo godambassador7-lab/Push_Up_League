@@ -1,7 +1,5 @@
 'use client';
 
-import { Flame } from 'lucide-react';
-
 interface StreakFlameProps {
   streak: number;
   isBroken: boolean;
@@ -17,38 +15,43 @@ export const StreakFlame = ({ streak, isBroken, size = 12 }: StreakFlameProps) =
   // Determine flame color and animation based on streak
   const getFlameStyle = () => {
     if (streak >= 41) {
-      // 41-50: Black flame with white border
+      // 41-50: Black flame with white glow
       return {
-        color: 'text-gray-900',
-        glow: 'drop-shadow-[0_0_16px_rgba(255,255,255,1)] drop-shadow-[0_0_8px_rgba(255,255,255,1)]',
+        primaryColor: '#1a1a1a',
+        secondaryColor: '#000000',
+        glowColor: 'rgba(255, 255, 255, 0.9)',
         animation: 'animate-flame-intense'
       };
     } else if (streak >= 31) {
       // 31-40: Purple flame
       return {
-        color: 'text-purple-500',
-        glow: 'drop-shadow-[0_0_16px_rgba(168,85,247,1)] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]',
+        primaryColor: '#a855f7',
+        secondaryColor: '#9333ea',
+        glowColor: 'rgba(168, 85, 247, 0.8)',
         animation: 'animate-flame-strong'
       };
     } else if (streak >= 21) {
       // 21-30: Blue flame
       return {
-        color: 'text-blue-500',
-        glow: 'drop-shadow-[0_0_16px_rgba(59,130,246,1)] drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]',
+        primaryColor: '#3b82f6',
+        secondaryColor: '#2563eb',
+        glowColor: 'rgba(59, 130, 246, 0.8)',
         animation: 'animate-flame-strong'
       };
     } else if (streak >= 11) {
       // 11-20: Green flame
       return {
-        color: 'text-green-500',
-        glow: 'drop-shadow-[0_0_16px_rgba(34,197,94,1)] drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]',
+        primaryColor: '#22c55e',
+        secondaryColor: '#16a34a',
+        glowColor: 'rgba(34, 197, 94, 0.8)',
         animation: 'animate-flame-medium'
       };
     } else {
-      // 1-10: Regular orange/red flame
+      // 1-10: Regular orange/yellow flame
       return {
-        color: 'text-accent',
-        glow: 'drop-shadow-[0_0_12px_rgba(0,188,212,0.9)] drop-shadow-[0_0_6px_rgba(0,188,212,0.6)]',
+        primaryColor: '#fb923c',
+        secondaryColor: '#f97316',
+        glowColor: 'rgba(251, 146, 60, 0.8)',
         animation: 'animate-flame-regular'
       };
     }
@@ -57,152 +60,156 @@ export const StreakFlame = ({ streak, isBroken, size = 12 }: StreakFlameProps) =
   const style = getFlameStyle();
 
   return (
-    <div className="relative inline-block">
-      <Flame
-        size={size}
-        className={`${style.color} ${style.glow} ${style.animation}`}
-        fill="currentColor"
-      />
-      {/* Enhanced flickering animations with different intensities */}
+    <div className="relative inline-block" style={{ width: size, height: size }}>
+      <svg
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        className={style.animation}
+        style={{ filter: `drop-shadow(0 0 ${size * 0.5}px ${style.glowColor})` }}
+      >
+        {/* Main flame body */}
+        <path
+          d="M12 2C12 2 8 6 8 10C8 13.314 9.791 16 12 16C14.209 16 16 13.314 16 10C16 6 12 2 12 2Z"
+          fill={style.primaryColor}
+          className="flame-main"
+        />
+        {/* Inner flame */}
+        <path
+          d="M12 6C12 6 10 8.5 10 10.5C10 12.433 10.895 14 12 14C13.105 14 14 12.433 14 10.5C14 8.5 12 6 12 6Z"
+          fill={style.secondaryColor}
+          className="flame-inner"
+          opacity="0.8"
+        />
+        {/* Flame tip */}
+        <circle
+          cx="12"
+          cy="4"
+          r="1.5"
+          fill={style.glowColor}
+          className="flame-tip"
+        />
+      </svg>
+      {/* Dancing flame animations */}
       <style jsx>{`
         @keyframes flame-regular {
           0%, 100% {
-            opacity: 1;
-            transform: scale(1) rotate(0deg) translateY(0);
-            filter: brightness(1);
+            transform: scale(1, 1) translateY(0) rotate(0deg);
           }
-          20% {
-            opacity: 0.85;
-            transform: scale(1.12) rotate(-3deg) translateY(-1px);
-            filter: brightness(1.1);
+          25% {
+            transform: scale(1.05, 0.95) translateY(-1px) rotate(-2deg);
           }
-          40% {
-            opacity: 1;
-            transform: scale(0.94) rotate(3deg) translateY(1px);
-            filter: brightness(0.95);
+          50% {
+            transform: scale(0.98, 1.03) translateY(0px) rotate(2deg);
           }
-          60% {
-            opacity: 0.9;
-            transform: scale(1.08) rotate(-2deg) translateY(-1px);
-            filter: brightness(1.05);
-          }
-          80% {
-            opacity: 1;
-            transform: scale(0.98) rotate(2deg) translateY(1px);
-            filter: brightness(0.98);
+          75% {
+            transform: scale(1.02, 0.97) translateY(-0.5px) rotate(-1deg);
           }
         }
 
         @keyframes flame-medium {
           0%, 100% {
-            opacity: 1;
-            transform: scale(1) rotate(0deg) translateY(0);
-            filter: brightness(1);
+            transform: scale(1, 1) translateY(0) rotate(0deg);
           }
-          15% {
-            opacity: 0.8;
-            transform: scale(1.18) rotate(-4deg) translateY(-1px);
-            filter: brightness(1.2);
+          20% {
+            transform: scale(1.08, 0.92) translateY(-1.5px) rotate(-3deg);
           }
-          35% {
-            opacity: 1;
-            transform: scale(0.88) rotate(4deg) translateY(1px);
-            filter: brightness(0.9);
+          40% {
+            transform: scale(0.95, 1.05) translateY(0.5px) rotate(3deg);
           }
-          55% {
-            opacity: 0.85;
-            transform: scale(1.14) rotate(-3deg) translateY(-1px);
-            filter: brightness(1.1);
+          60% {
+            transform: scale(1.04, 0.96) translateY(-1px) rotate(-2deg);
           }
-          75% {
-            opacity: 1;
-            transform: scale(0.94) rotate(3deg) translateY(1px);
-            filter: brightness(0.95);
+          80% {
+            transform: scale(0.97, 1.02) translateY(0px) rotate(2deg);
           }
         }
 
         @keyframes flame-strong {
           0%, 100% {
-            opacity: 1;
-            transform: scale(1) rotate(0deg) translateY(0);
-            filter: brightness(1) drop-shadow(0 0 4px currentColor);
+            transform: scale(1, 1) translateY(0) rotate(0deg);
           }
-          12% {
-            opacity: 0.75;
-            transform: scale(1.22) rotate(-5deg) translateY(-2px);
-            filter: brightness(1.3) drop-shadow(0 0 8px currentColor);
+          15% {
+            transform: scale(1.12, 0.88) translateY(-2px) rotate(-4deg);
           }
-          28% {
-            opacity: 1;
-            transform: scale(0.84) rotate(5deg) translateY(1px);
-            filter: brightness(0.85) drop-shadow(0 0 2px currentColor);
+          30% {
+            transform: scale(0.92, 1.08) translateY(1px) rotate(4deg);
           }
           45% {
-            opacity: 0.8;
-            transform: scale(1.18) rotate(-4deg) translateY(-2px);
-            filter: brightness(1.2) drop-shadow(0 0 6px currentColor);
+            transform: scale(1.06, 0.94) translateY(-1.5px) rotate(-3deg);
           }
-          65% {
-            opacity: 1;
-            transform: scale(0.88) rotate(4deg) translateY(1px);
-            filter: brightness(0.9) drop-shadow(0 0 3px currentColor);
+          60% {
+            transform: scale(0.94, 1.06) translateY(0.5px) rotate(3deg);
           }
-          82% {
-            opacity: 0.9;
-            transform: scale(1.12) rotate(-3deg) translateY(-1px);
-            filter: brightness(1.1) drop-shadow(0 0 5px currentColor);
+          75% {
+            transform: scale(1.04, 0.96) translateY(-1px) rotate(-2deg);
+          }
+          90% {
+            transform: scale(0.98, 1.02) translateY(0px) rotate(2deg);
           }
         }
 
         @keyframes flame-intense {
           0%, 100% {
-            opacity: 1;
-            transform: scale(1) rotate(0deg) translateY(0);
-            filter: brightness(1) drop-shadow(0 0 6px rgba(255,255,255,0.8));
+            transform: scale(1, 1) translateY(0) rotate(0deg);
           }
           10% {
-            opacity: 0.7;
-            transform: scale(1.28) rotate(-6deg) translateY(-2px);
-            filter: brightness(1.4) drop-shadow(0 0 12px rgba(255,255,255,1));
+            transform: scale(1.15, 0.85) translateY(-2.5px) rotate(-5deg);
           }
-          22% {
-            opacity: 1;
-            transform: scale(0.78) rotate(6deg) translateY(2px);
-            filter: brightness(0.8) drop-shadow(0 0 4px rgba(255,255,255,0.6));
+          20% {
+            transform: scale(0.88, 1.12) translateY(1.5px) rotate(5deg);
           }
-          38% {
-            opacity: 0.75;
-            transform: scale(1.24) rotate(-5deg) translateY(-2px);
-            filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,255,0.9));
+          30% {
+            transform: scale(1.1, 0.9) translateY(-2px) rotate(-4deg);
           }
-          55% {
-            opacity: 1;
-            transform: scale(0.84) rotate(5deg) translateY(2px);
-            filter: brightness(0.85) drop-shadow(0 0 5px rgba(255,255,255,0.7));
+          40% {
+            transform: scale(0.92, 1.08) translateY(1px) rotate(4deg);
+          }
+          50% {
+            transform: scale(1.08, 0.92) translateY(-1.5px) rotate(-3deg);
+          }
+          60% {
+            transform: scale(0.94, 1.06) translateY(0.5px) rotate(3deg);
           }
           70% {
-            opacity: 0.8;
-            transform: scale(1.18) rotate(-4deg) translateY(-2px);
-            filter: brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,0.85));
+            transform: scale(1.06, 0.94) translateY(-1px) rotate(-2deg);
           }
-          85% {
-            opacity: 1;
-            transform: scale(0.94) rotate(3deg) translateY(1px);
-            filter: brightness(0.95) drop-shadow(0 0 6px rgba(255,255,255,0.75));
+          80% {
+            transform: scale(0.96, 1.04) translateY(0.5px) rotate(2deg);
+          }
+          90% {
+            transform: scale(1.03, 0.97) translateY(-0.5px) rotate(-1deg);
           }
         }
 
         .animate-flame-regular {
-          animation: flame-regular 1.2s ease-in-out infinite;
+          animation: flame-regular 1.5s ease-in-out infinite;
+          transform-origin: center bottom;
         }
         .animate-flame-medium {
-          animation: flame-medium 1.05s ease-in-out infinite;
+          animation: flame-medium 1.2s ease-in-out infinite;
+          transform-origin: center bottom;
         }
         .animate-flame-strong {
-          animation: flame-strong 0.95s ease-in-out infinite;
+          animation: flame-strong 1s ease-in-out infinite;
+          transform-origin: center bottom;
         }
         .animate-flame-intense {
           animation: flame-intense 0.8s ease-in-out infinite;
+          transform-origin: center bottom;
+        }
+
+        .flame-main, .flame-inner, .flame-tip {
+          animation: flicker 0.15s ease-in-out infinite alternate;
+        }
+
+        @keyframes flicker {
+          from {
+            opacity: 0.95;
+          }
+          to {
+            opacity: 1;
+          }
         }
       `}</style>
     </div>

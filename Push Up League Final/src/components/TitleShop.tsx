@@ -1,14 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { TITLE_CATALOG, Title, getCategoryColor, getCategoryLabel } from '@/lib/titleShop';
-import { ShoppingBag, Star, Check, Lock, Coins } from 'lucide-react';
+import { ShoppingBag, Star, Check, Lock, Coins, ChevronDown } from 'lucide-react';
 
 export const TitleShop = () => {
   const [selectedCategory, setSelectedCategory] = useState<Title['category'] | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showMessage, setShowMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const coins = useEnhancedStore((state) => state.coins);
   const purchasedTitles = useEnhancedStore((state) => state.purchasedTitles);
@@ -101,7 +106,7 @@ export const TitleShop = () => {
         >
           All ({TITLE_CATALOG.length})
         </button>
-        {(['legendary', 'epic', 'rare', 'uncommon', 'common'] as Title['category'][]).map((cat) => {
+        {(['common', 'uncommon', 'rare', 'epic', 'legendary'] as Title['category'][]).map((cat) => {
           const count = TITLE_CATALOG.filter((t) => t.category === cat).length;
           return (
             <button
@@ -147,11 +152,24 @@ export const TitleShop = () => {
         </div>
       )}
 
+      {/* Scroll to Bottom Button */}
+      {selectedCategory === 'all' && (
+        <div className="flex justify-center">
+          <button
+            onClick={scrollToBottom}
+            className="glass glass-border rounded-full p-3 hover:bg-accent/10 transition group"
+            title="Scroll to Legendary titles"
+          >
+            <ChevronDown size={24} className="text-accent group-hover:animate-bounce" />
+          </button>
+        </div>
+      )}
+
       {/* Titles Grid */}
       {selectedCategory === 'all' ? (
         // Show grouped by category
         <div className="space-y-8">
-          {(['legendary', 'epic', 'rare', 'uncommon', 'common'] as Title['category'][]).map((cat) => {
+          {(['common', 'uncommon', 'rare', 'epic', 'legendary'] as Title['category'][]).map((cat) => {
             const titles = groupedTitles[cat];
             if (!titles || titles.length === 0) return null;
 
@@ -179,6 +197,8 @@ export const TitleShop = () => {
               </div>
             );
           })}
+          {/* Bottom anchor for scrolling */}
+          <div ref={bottomRef} />
         </div>
       ) : (
         // Show selected category only
