@@ -38,9 +38,12 @@ export const Header = () => {
             <img
               src={logoSrc}
               alt="Push Up League Logo"
-              className="w-12 h-12 sm:w-[72px] sm:h-[72px] rounded-lg flex-shrink-0"
+              className="w-24 h-24 sm:w-[144px] sm:h-[144px] rounded-lg flex-shrink-0"
             />
-            <div className="font-black text-base sm:text-2xl lg:text-3xl text-hero bg-gradient-to-r from-white via-gray-300 to-gray-400 bg-clip-text text-transparent truncate uppercase" style={{ letterSpacing: '0.05em', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>PUSH-UP LEAGUE</div>
+            <div className="flex flex-col justify-center">
+              <div className="font-black text-2xl sm:text-4xl lg:text-5xl text-hero bg-gradient-to-r from-white via-gray-300 to-gray-400 bg-clip-text text-transparent truncate uppercase" style={{ letterSpacing: '0.05em', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>PUSH-UP LEAGUE</div>
+              <div className="sm:hidden text-[10px] text-gray-500 uppercase tracking-widest font-bold px-2 py-0.5 bg-dark-border rounded w-fit mt-1">BETA</div>
+            </div>
             <div className="hidden sm:block text-[10px] text-gray-500 uppercase tracking-widest font-bold px-2 py-0.5 bg-dark-border rounded flex-shrink-0">BETA</div>
           </div>
 
