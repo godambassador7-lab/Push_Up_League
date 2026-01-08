@@ -33,18 +33,14 @@ export const Header = () => {
     <>
       <header className="border-b glass-border glass backdrop-blur-glass sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-          {/* Logo and Title */}
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          {/* Logo and Beta Badge */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <img
               src={logoSrc}
               alt="Push Up League Logo"
               className="w-[96px] h-[96px] sm:w-[144px] sm:h-[144px] rounded-lg flex-shrink-0"
             />
-            <div className="flex flex-col justify-center items-start">
-              <div className="font-black text-2xl sm:text-4xl lg:text-5xl text-hero bg-gradient-to-r from-white via-gray-300 to-gray-400 bg-clip-text text-transparent uppercase leading-tight" style={{ letterSpacing: '0.05em', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>PUSH-UP LEAGUE</div>
-              <div className="sm:hidden text-[10px] text-gray-500 uppercase tracking-widest font-bold px-2 py-0.5 bg-dark-border rounded w-fit mt-1">BETA</div>
-            </div>
-            <div className="hidden sm:block text-[10px] text-gray-500 uppercase tracking-widest font-bold px-2 py-0.5 bg-dark-border rounded flex-shrink-0">BETA</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold px-2 py-0.5 bg-dark-border rounded flex-shrink-0">BETA</div>
           </div>
 
           {/* Right Side */}
