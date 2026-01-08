@@ -95,6 +95,7 @@ export interface UserState {
   maxPushupsInOneSet: number;
   accountCreatedAt: string | null;
   isWorldRecordCandidate: boolean;
+  waiverAccepted: boolean;
 
   // Game Progress
   totalXp: number;
@@ -132,6 +133,7 @@ export interface UserState {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, username: string, proficiency: ProficiencyLevel, maxPushups: number) => void;
   logout: () => void;
+  acceptWaiver: () => void;
   logWorkout: (pushups: number, sets?: WorkoutSet[], challengeBonus?: boolean, sessionDuration?: number) => { success: boolean; message: string; warnings?: string[] };
   lockDay: (date: string) => void;
   isDayLocked: (date: string) => boolean;
@@ -181,6 +183,7 @@ const getInitialState = () => ({
   maxPushupsInOneSet: 10,
   accountCreatedAt: null,
   isWorldRecordCandidate: false,
+  waiverAccepted: false,
   totalXp: 0,
   coins: 100,
   currentRank: 1,
@@ -227,6 +230,8 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
   ...getInitialState(),
 
   setUsername: (name: string) => set({ username: name }),
+
+  acceptWaiver: () => set({ waiverAccepted: true }),
 
   setUserProfile: (email: string, proficiency: ProficiencyLevel, maxPushups: number) => {
     const isWorldRecordCandidate = maxPushups > 200 || proficiency === 'world-class';

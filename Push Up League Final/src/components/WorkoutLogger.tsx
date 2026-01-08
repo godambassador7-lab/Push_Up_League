@@ -5,6 +5,7 @@ import { useUserStore } from '@/lib/store';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { Plus, Minus, Coins } from 'lucide-react';
 import { WorkoutSuccessModal } from './WorkoutSuccessModal';
+import { WaiverModal } from './WaiverModal';
 
 export const WorkoutLogger = () => {
   const [pushups, setPushups] = useState(10);
@@ -12,15 +13,23 @@ export const WorkoutLogger = () => {
   const [dailyChallenge, setDailyChallenge] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastWorkoutData, setLastWorkoutData] = useState<any>(null);
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
 
   const logWorkout = useUserStore((state) => state.logWorkout);
   const getTodayWorkout = useUserStore((state) => state.getTodayWorkout);
   const currentStreak = useEnhancedStore((state) => state.currentStreak);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
+  const waiverAccepted = useEnhancedStore((state) => state.waiverAccepted);
 
   const todayWorkout = getTodayWorkout();
 
   const handleSubmit = () => {
+    // Check if waiver is accepted
+    if (!waiverAccepted) {
+      setShowWaiverModal(true);
+      return;
+    }
+
     // Calculate expected rewards (simplified - actual calc in store)
     const baseCoins = 10 + (sets > 1 ? sets * 2 : 0);
     const streakMult = currentStreak >= 30 ? 1.15 : currentStreak >= 14 ? 1.1 : currentStreak >= 7 ? 1.05 : 1.0;
@@ -154,6 +163,9 @@ export const WorkoutLogger = () => {
           </div>
         </div>
       </div>
+
+      {/* Waiver Modal */}
+      <WaiverModal isOpen={showWaiverModal} onClose={() => setShowWaiverModal(false)} />
     </div>
     </>
   );

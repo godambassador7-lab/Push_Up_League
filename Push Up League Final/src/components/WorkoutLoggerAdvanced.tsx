@@ -8,6 +8,7 @@ import { Plus, Minus, Coins, Trophy, X, ChevronDown, Search } from 'lucide-react
 import { WorkoutSuccessModal } from './WorkoutSuccessModal';
 import { SessionChallengeSelector } from './SessionChallengeSelector';
 import { SessionChallenge, checkSessionChallengeCompletion, SessionWorkoutData } from '@/lib/sessionChallenges';
+import { WaiverModal } from './WaiverModal';
 
 export const WorkoutLoggerAdvanced = () => {
   const [workoutSets, setWorkoutSets] = useState<WorkoutSet[]>([
@@ -21,11 +22,13 @@ export const WorkoutLoggerAdvanced = () => {
   const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
   const [completedSessionChallenges, setCompletedSessionChallenges] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
 
   const logWorkout = useEnhancedStore((state) => state.logWorkout);
   const getTodayWorkout = useEnhancedStore((state) => state.getTodayWorkout);
   const currentStreak = useEnhancedStore((state) => state.currentStreak);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
+  const waiverAccepted = useEnhancedStore((state) => state.waiverAccepted);
 
   const todayWorkout = getTodayWorkout();
 
@@ -119,6 +122,12 @@ export const WorkoutLoggerAdvanced = () => {
   };
 
   const handleSubmit = () => {
+    // Check if waiver is accepted
+    if (!waiverAccepted) {
+      setShowWaiverModal(true);
+      return;
+    }
+
     const totalPushups = getTotalPushups();
     let { estimatedXP, estimatedCoins, goalCompleted } = calculateEstimatedRewards();
 
@@ -429,6 +438,9 @@ export const WorkoutLoggerAdvanced = () => {
         >
           Log Workout
         </button>
+
+        {/* Waiver Modal */}
+        <WaiverModal isOpen={showWaiverModal} onClose={() => setShowWaiverModal(false)} />
       </div>
     </>
   );
