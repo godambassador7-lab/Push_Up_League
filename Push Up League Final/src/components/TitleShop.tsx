@@ -24,7 +24,7 @@ export const TitleShop = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const sortedFilteredTitles = [...filteredTitles].sort((a, b) => b.price - a.price);
+  const sortedFilteredTitles = [...filteredTitles].sort((a, b) => a.price - b.price);
 
   // Group by category
   const groupedTitles = sortedFilteredTitles.reduce((acc, title) => {
