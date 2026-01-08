@@ -29,13 +29,16 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#0a0e27',
+  themeColor: '#0f1535',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" style={{ backgroundColor: '#0f1535' }}>
+      <head>
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body style={{ backgroundColor: '#0f1535' }}>
         <AppWrapper>
           {children}
         </AppWrapper>
