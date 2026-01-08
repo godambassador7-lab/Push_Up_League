@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame } from 'lucide-react';
+import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale } from 'lucide-react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
 import { TitleShop } from './TitleShop';
@@ -13,7 +13,7 @@ interface MenuProps {
 }
 
 export const Menu = ({ onClose }: MenuProps) => {
-  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories'>('main');
+  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories' | 'legal'>('main');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -69,6 +69,7 @@ export const Menu = ({ onClose }: MenuProps) => {
             {activeSection === 'shop' && 'Title Shop'}
             {activeSection === 'powerups' && 'Power-Ups Shop'}
             {activeSection === 'calories' && 'Calorie Tracker'}
+            {activeSection === 'legal' && 'Legal & Terms'}
           </h2>
           <button
             onClick={onClose}
@@ -150,6 +151,17 @@ export const Menu = ({ onClose }: MenuProps) => {
                 <div className="flex items-center gap-3">
                   <Info size={20} className="text-accent" />
                   <span className="font-display">About</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-400 group-hover:text-accent transition" />
+              </button>
+
+              <button
+                onClick={() => setActiveSection('legal')}
+                className="w-full p-4 glass-light rounded-lg border border-dark-border hover:border-accent/50 transition flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <Scale size={20} className="text-accent" />
+                  <span className="font-display">Legal & Terms</span>
                 </div>
                 <ChevronRight size={20} className="text-gray-400 group-hover:text-accent transition" />
               </button>
@@ -538,6 +550,206 @@ export const Menu = ({ onClose }: MenuProps) => {
               </button>
 
               <CalorieDashboard />
+            </div>
+          )}
+
+          {/* Legal & Terms Section */}
+          {activeSection === 'legal' && (
+            <div className="space-y-6">
+              <button
+                onClick={() => setActiveSection('main')}
+                className="text-sm text-accent hover:text-accent-light flex items-center gap-2 mb-4"
+              >
+                ← Back to Menu
+              </button>
+
+              {/* Terms of Service */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <AlertCircle size={24} className="text-warning" />
+                  <h3 className="text-xl font-black text-hero text-accent">Terms of Service & Liability Waiver</h3>
+                </div>
+
+                <div className="glass-light rounded-lg p-6 border border-dark-border space-y-4 max-h-[60vh] overflow-y-auto">
+                  {/* Last Updated */}
+                  <div className="text-xs text-gray-500 italic border-b border-dark-border pb-3">
+                    Last Updated: January 8, 2026
+                  </div>
+
+                  {/* Introduction */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">1. ACCEPTANCE OF TERMS</h4>
+                    <p className="text-sm text-gray-300">
+                      By accessing and using Push-Up League ("the App"), you accept and agree to be bound by the
+                      terms and conditions of this agreement. If you do not agree to these terms, you should not
+                      use this application.
+                    </p>
+                  </div>
+
+                  {/* Assumption of Risk */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">2. ASSUMPTION OF RISK</h4>
+                    <p className="text-sm text-gray-300 mb-2">
+                      You acknowledge and understand that:
+                    </p>
+                    <ul className="text-sm text-gray-300 space-y-1 pl-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Physical exercise, including push-ups and other bodyweight exercises, involves inherent risks
+                        of injury, including but not limited to muscle strains, joint injuries, cardiovascular events, and death.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>You are voluntarily participating in these activities with full knowledge of the risks involved.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>You assume all risks associated with the use of this App and any exercises performed based on
+                        the App's features, including but not limited to injury, illness, or death.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Liability Waiver */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">3. RELEASE OF LIABILITY</h4>
+                    <p className="text-sm text-gray-300 mb-2">
+                      To the fullest extent permitted by law, you hereby release, waive, discharge, and covenant not to sue
+                      Push-Up League, its developers, owners, affiliates, employees, agents, and representatives (collectively,
+                      "Released Parties") from any and all liability, claims, demands, actions, and causes of action whatsoever
+                      arising out of or related to:
+                    </p>
+                    <ul className="text-sm text-gray-300 space-y-1 pl-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Any loss, damage, injury, or death that may be sustained by you or any property belonging to you,
+                        whether caused by the negligence of the Released Parties or otherwise, while using the App or participating
+                        in any activity suggested, tracked, or gamified by the App.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Any injury, disability, death, or loss or damage to person or property arising from your use of the App.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Medical Disclaimer */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">4. MEDICAL DISCLAIMER</h4>
+                    <p className="text-sm text-gray-300 mb-2">
+                      This App is NOT a substitute for professional medical advice, diagnosis, or treatment. You acknowledge that:
+                    </p>
+                    <ul className="text-sm text-gray-300 space-y-1 pl-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>You should consult with a qualified healthcare provider before beginning any exercise program.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>The App does not provide medical advice and should not be relied upon as such.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>If you experience any pain, discomfort, or other symptoms during exercise, you should stop
+                        immediately and consult a healthcare provider.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>You are solely responsible for your health and safety while using this App.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* User Responsibilities */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">5. USER RESPONSIBILITIES</h4>
+                    <p className="text-sm text-gray-300 mb-2">
+                      By using this App, you agree to:
+                    </p>
+                    <ul className="text-sm text-gray-300 space-y-1 pl-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Research and practice proper exercise form and technique before attempting any exercises.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Listen to your body and exercise within your physical capabilities and limitations.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Use appropriate equipment and ensure a safe exercise environment.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-accent mt-1">•</span>
+                        <span>Not hold the App or Released Parties responsible for any injuries, accidents, or harm sustained.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* No Warranty */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">6. NO WARRANTY</h4>
+                    <p className="text-sm text-gray-300">
+                      THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+                      INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR
+                      NON-INFRINGEMENT. The Released Parties make no warranty that the App will meet your requirements or that
+                      it will be uninterrupted, timely, secure, or error-free.
+                    </p>
+                  </div>
+
+                  {/* Limitation of Liability */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">7. LIMITATION OF LIABILITY</h4>
+                    <p className="text-sm text-gray-300">
+                      IN NO EVENT SHALL THE RELEASED PARTIES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL,
+                      OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO PERSONAL INJURY, PAIN AND SUFFERING, EMOTIONAL DISTRESS, LOSS
+                      OF REVENUE, LOSS OF PROFITS, LOSS OF BUSINESS OR ANTICIPATED SAVINGS, LOSS OF USE, LOSS OF GOODWILL, LOSS OF DATA,
+                      OR ANY OTHER LOSSES, WHETHER CAUSED BY TORT (INCLUDING NEGLIGENCE), BREACH OF CONTRACT, OR OTHERWISE, ARISING OUT
+                      OF OR IN CONNECTION WITH YOUR USE OF THE APP, EVEN IF THE RELEASED PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY
+                      OF SUCH DAMAGES.
+                    </p>
+                  </div>
+
+                  {/* Indemnification */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">8. INDEMNIFICATION</h4>
+                    <p className="text-sm text-gray-300">
+                      You agree to indemnify, defend, and hold harmless the Released Parties from and against any and all claims,
+                      liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) that such parties
+                      may incur as a result of or arising from your use of the App or your violation of these Terms of Service.
+                    </p>
+                  </div>
+
+                  {/* Severability */}
+                  <div>
+                    <h4 className="font-bold text-accent mb-2">9. SEVERABILITY</h4>
+                    <p className="text-sm text-gray-300">
+                      If any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or
+                      eliminated to the minimum extent necessary so that these Terms will otherwise remain in full force and effect
+                      and enforceable.
+                    </p>
+                  </div>
+
+                  {/* Acknowledgment */}
+                  <div className="border-t border-dark-border pt-4 mt-4">
+                    <p className="text-sm text-gray-300 font-semibold">
+                      BY USING THIS APP, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS
+                      TERMS AND CONDITIONS. YOU FURTHER AGREE THAT IT IS THE COMPLETE AND EXCLUSIVE STATEMENT OF THE AGREEMENT BETWEEN
+                      YOU AND THE RELEASED PARTIES, WHICH SUPERSEDES ANY PROPOSAL OR PRIOR AGREEMENT, ORAL OR WRITTEN, AND ANY OTHER
+                      COMMUNICATIONS BETWEEN YOU AND THE RELEASED PARTIES RELATING TO THE SUBJECT MATTER OF THIS AGREEMENT.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="glass rounded-lg p-4 border border-dark-border">
+                  <h4 className="font-bold text-accent mb-2">Questions or Concerns?</h4>
+                  <p className="text-sm text-gray-300">
+                    If you have any questions about these terms or concerns about your use of the App, please discontinue use
+                    and consult with a legal or medical professional as appropriate.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
