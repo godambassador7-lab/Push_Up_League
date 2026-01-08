@@ -25,7 +25,12 @@
       "Bash(robocopy:*)",
       "Bash(xcopy:*)",
       "Bash(curl -s https://godambassador7-lab.github.io/Push_Up_League/)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(gh run list:*)",
+      "Bash(powershell -Command \"if \\(Test-Path docs\\) { Remove-Item -Recurse -Force docs }\")",
+      "Bash(powershell -Command \"Copy-Item -Recurse ''Push Up League Final\\\\out'' docs\")",
+      "Bash(powershell -Command \"New-Item -ItemType File -Force docs\\\\.nojekyll | Out-Null\")",
+      "Bash(set NEXT_PUBLIC_BASE_PATH=/Push_Up_League)"
     ]
   }
 }

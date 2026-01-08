@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, PenTool } from 'lucide-react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
+import { WAIVER_VERSION, WAIVER_LAST_UPDATED } from '@/lib/waiverConstants';
 
 interface WaiverModalProps {
   isOpen: boolean;
@@ -11,16 +12,20 @@ interface WaiverModalProps {
 
 export const WaiverModal = ({ isOpen, onClose }: WaiverModalProps) => {
   const [accepted, setAccepted] = useState(false);
+  const [signatureName, setSignatureName] = useState('');
   const acceptWaiver = useEnhancedStore((state) => state.acceptWaiver);
+  const username = useEnhancedStore((state) => state.username);
 
   if (!isOpen) return null;
 
   const handleAccept = () => {
-    if (accepted) {
-      acceptWaiver();
+    if (accepted && signatureName.trim().length >= 2) {
+      acceptWaiver(signatureName.trim(), WAIVER_VERSION);
       onClose();
     }
   };
+
+  const canSubmit = accepted && signatureName.trim().length >= 2;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark/90 backdrop-blur-sm p-4">
@@ -37,7 +42,13 @@ export const WaiverModal = ({ isOpen, onClose }: WaiverModalProps) => {
         {/* Waiver Content */}
         <div className="space-y-4 mb-6 glass-light rounded-lg p-6 border border-dark-border max-h-96 overflow-y-auto">
           <div className="space-y-3 text-sm text-gray-300">
-            <p className="font-bold text-accent text-base">ASSUMPTION OF RISK AND LIABILITY WAIVER</p>
+            <div className="flex items-center justify-between border-b border-dark-border pb-2 mb-3">
+              <p className="font-bold text-accent text-base">ASSUMPTION OF RISK AND LIABILITY WAIVER</p>
+              <div className="text-xs text-gray-500">
+                <div>Version {WAIVER_VERSION}</div>
+                <div>{WAIVER_LAST_UPDATED}</div>
+              </div>
+            </div>
 
             <p>
               By using the Push-Up League application, you acknowledge and understand that physical exercise,
@@ -86,6 +97,30 @@ export const WaiverModal = ({ isOpen, onClose }: WaiverModalProps) => {
           </div>
         </div>
 
+        {/* Electronic Signature */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-2 text-accent mb-2">
+            <PenTool size={18} />
+            <span className="font-bold text-sm">Electronic Signature (Required)</span>
+          </div>
+          <div className="glass rounded-lg p-4 border border-dark-border">
+            <label className="block text-xs text-gray-400 mb-2">
+              Type your full name below to electronically sign this waiver:
+            </label>
+            <input
+              type="text"
+              value={signatureName}
+              onChange={(e) => setSignatureName(e.target.value)}
+              placeholder={username || "Enter your full name"}
+              className="w-full bg-dark-card border border-dark-border rounded-lg px-4 py-3 text-white outline-none focus:border-accent transition font-display text-lg"
+              maxLength={100}
+            />
+            <div className="text-xs text-gray-500 mt-2">
+              By typing your name, you are providing a legally binding electronic signature.
+            </div>
+          </div>
+        </div>
+
         {/* Checkbox Agreement */}
         <div className="mb-6">
           <label className="flex items-start gap-3 cursor-pointer group">
@@ -113,17 +148,24 @@ export const WaiverModal = ({ isOpen, onClose }: WaiverModalProps) => {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="space-y-3">
+          {!canSubmit && (
+            <div className="text-xs text-center text-gray-500">
+              {!signatureName.trim() && '⚠️ Electronic signature required'}
+              {signatureName.trim() && signatureName.trim().length < 2 && '⚠️ Name must be at least 2 characters'}
+              {signatureName.trim().length >= 2 && !accepted && '⚠️ You must check the agreement box'}
+            </div>
+          )}
           <button
             onClick={handleAccept}
-            disabled={!accepted}
-            className={`flex-1 py-3 rounded-lg font-display font-bold uppercase tracking-wider transition ${
-              accepted
+            disabled={!canSubmit}
+            className={`w-full py-3 rounded-lg font-display font-bold uppercase tracking-wider transition ${
+              canSubmit
                 ? 'bg-gradient-to-r from-accent to-electric-blue text-dark hover:shadow-lg hover:shadow-accent/50'
                 : 'glass-light border border-dark-border text-gray-500 cursor-not-allowed'
             }`}
           >
-            Accept & Continue
+            {canSubmit ? 'Accept & Continue' : 'Complete All Requirements'}
           </button>
         </div>
       </div>

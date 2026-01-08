@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale } from 'lucide-react';
+import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check } from 'lucide-react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
 import { TitleShop } from './TitleShop';
@@ -739,6 +739,43 @@ export const Menu = ({ onClose }: MenuProps) => {
                       COMMUNICATIONS BETWEEN YOU AND THE RELEASED PARTIES RELATING TO THE SUBJECT MATTER OF THIS AGREEMENT.
                     </p>
                   </div>
+                </div>
+
+                {/* Waiver Acceptance Record */}
+                <div className="glass rounded-lg p-4 border border-success/30 bg-success/5">
+                  <h4 className="font-bold text-success mb-3 flex items-center gap-2">
+                    <Check size={18} />
+                    Your Waiver Acceptance Record
+                  </h4>
+                  {useEnhancedStore.getState().waiverAccepted ? (
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Status:</span>
+                        <span className="text-success font-bold">Accepted & Signed</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Signature:</span>
+                        <span className="font-display">{useEnhancedStore.getState().waiverSignatureName || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Date Accepted:</span>
+                        <span>{useEnhancedStore.getState().waiverAcceptedAt
+                          ? new Date(useEnhancedStore.getState().waiverAcceptedAt!).toLocaleString()
+                          : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Version:</span>
+                        <span>{useEnhancedStore.getState().waiverVersion || 'N/A'}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-3 pt-3 border-t border-dark-border italic">
+                        This record serves as legal proof of your acceptance of the liability waiver and terms of service.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-warning">
+                      You have not yet accepted the waiver. You will be prompted when you attempt to log your first workout.
+                    </div>
+                  )}
                 </div>
 
                 {/* Contact Information */}
