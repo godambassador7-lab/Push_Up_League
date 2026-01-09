@@ -17,6 +17,7 @@ import { OnboardingWithAuth } from '@/components/OnboardingWithAuth';
 import { Login } from '@/components/Login';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { RANK_LADDER } from '@/lib/enhancedStore';
+import { syncManager } from '@/lib/syncManager';
 import { Calendar, Trophy, Target, TrendingUp, Award, Zap } from 'lucide-react';
 import { AchievementsPage } from '@/components/AchievementsPage';
 import { IronMode } from '@/components/IronMode';
@@ -47,6 +48,11 @@ export default function Dashboard() {
   const streakStatus = getStreakStatus();
   const nextRankData = currentRank < RANK_LADDER.length ? RANK_LADDER[currentRank] : null;
   const todayWorkout = getTodayWorkout();
+
+  // Initialize sync manager on mount
+  useEffect(() => {
+    syncManager.initialize();
+  }, []);
 
   // Listen for workout changes and show tip popup
   useEffect(() => {

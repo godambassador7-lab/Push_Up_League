@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, orderBy, limit, getDocs, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 
@@ -71,6 +71,24 @@ export const logoutUser = async () => {
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+};
+
+export const signInWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    return { success: true, user: result.user };
+  } catch (error: any) {
+    let errorMessage = error.message;
+    if (error.code === 'auth/popup-closed-by-user') {
+      errorMessage = 'Sign-in popup was closed. Please try again.';
+    } else if (error.code === 'auth/unauthorized-domain') {
+      errorMessage = 'This domain is not authorized for Google sign-in. Please contact support.';
+    } else if (error.code === 'auth/popup-blocked') {
+      errorMessage = 'Popup was blocked by the browser. Please allow popups and try again.';
+    }
+    return { success: false, error: errorMessage };
   }
 };
 

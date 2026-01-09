@@ -1,20 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check, Sparkles } from 'lucide-react';
+import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check, Sparkles, HelpCircle } from 'lucide-react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
 import { TitleShop } from './TitleShop';
 import { PowerUpsShop } from './PowerUpsShop';
 import { CalorieDashboard } from './CalorieDashboard';
 import { UpdatesPage } from './UpdatesPage';
+import { HelpPage } from './HelpPage';
 
 interface MenuProps {
   onClose: () => void;
 }
 
 export const Menu = ({ onClose }: MenuProps) => {
-  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories' | 'legal' | 'updates'>('main');
+  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories' | 'legal' | 'updates' | 'help'>('main');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -72,6 +73,7 @@ export const Menu = ({ onClose }: MenuProps) => {
             {activeSection === 'calories' && 'Calorie Tracker'}
             {activeSection === 'legal' && 'Legal & Terms'}
             {activeSection === 'updates' && 'What\'s New'}
+            {activeSection === 'help' && 'Help & FAQ'}
           </h2>
           <button
             onClick={onClose}
@@ -144,6 +146,17 @@ export const Menu = ({ onClose }: MenuProps) => {
                   <span className="font-display text-rank-mythic">What's New</span>
                 </div>
                 <ChevronRight size={20} className="text-rank-mythic/60 group-hover:text-rank-mythic transition" />
+              </button>
+
+              <button
+                onClick={() => setActiveSection('help')}
+                className="w-full p-4 glass-light rounded-lg border border-success/50 hover:border-success transition flex items-center justify-between group bg-success/5"
+              >
+                <div className="flex items-center gap-3">
+                  <HelpCircle size={20} className="text-success" />
+                  <span className="font-display text-success">Help & FAQ</span>
+                </div>
+                <ChevronRight size={20} className="text-success/60 group-hover:text-success transition" />
               </button>
 
               <button
@@ -577,6 +590,20 @@ export const Menu = ({ onClose }: MenuProps) => {
               </button>
 
               <UpdatesPage onBack={() => setActiveSection('main')} />
+            </div>
+          )}
+
+          {/* Help & FAQ Section */}
+          {activeSection === 'help' && (
+            <div className="space-y-6">
+              <button
+                onClick={() => setActiveSection('main')}
+                className="text-sm text-accent hover:text-accent-light flex items-center gap-2 mb-4"
+              >
+                ← Back to Menu
+              </button>
+
+              <HelpPage onBack={() => setActiveSection('main')} />
             </div>
           )}
 
