@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { RankBadge } from '@/components/RankBadge';
 import { StreakDisplay } from '@/components/StreakDisplay';
@@ -20,11 +20,14 @@ import { RANK_LADDER } from '@/lib/enhancedStore';
 import { Calendar, Trophy, Target, TrendingUp, Award, Zap } from 'lucide-react';
 import { AchievementsPage } from '@/components/AchievementsPage';
 import { IronMode } from '@/components/IronMode';
+import { WorkoutTipPopup } from '@/components/WorkoutTipPopup';
+import { getTipForWorkout, WorkoutTip } from '@/lib/workoutTips';
 
 export default function Dashboard() {
   const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'leaderboard' | 'achievements' | 'iron-mode'>('dashboard');
   const [showAuthModal, setShowAuthModal] = useState<'login' | 'register' | null>(null);
   const [useAdvancedLogger, setUseAdvancedLogger] = useState(true);
+  const [currentTip, setCurrentTip] = useState<WorkoutTip | null>(null);
 
   const isAuthenticated = useEnhancedStore((state) => state.isAuthenticated);
   const username = useEnhancedStore((state) => state.username);
@@ -44,6 +47,22 @@ export default function Dashboard() {
   const streakStatus = getStreakStatus();
   const nextRankData = currentRank < RANK_LADDER.length ? RANK_LADDER[currentRank] : null;
   const todayWorkout = getTodayWorkout();
+
+  // Listen for workout changes and show tip popup
+  useEffect(() => {
+    const unsubscribe = useEnhancedStore.subscribe(
+      (state) => state.workouts.length,
+      (workoutCount, prevWorkoutCount) => {
+        // Show tip popup when a new workout is logged
+        if (workoutCount > prevWorkoutCount) {
+          const tip = getTipForWorkout(workoutCount);
+          setCurrentTip(tip);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   // Show onboarding if not authenticated and no modal
   if (!isAuthenticated && !showAuthModal) {
@@ -337,6 +356,14 @@ export default function Dashboard() {
           <p className="mt-2">v2.0.0 BETA • Full Integration</p>
         </div>
       </footer>
+
+      {/* Workout Tip Popup */}
+      {currentTip && (
+        <WorkoutTipPopup
+          tip={currentTip}
+          onClose={() => setCurrentTip(null)}
+        />
+      )}
     </div>
   );
 }

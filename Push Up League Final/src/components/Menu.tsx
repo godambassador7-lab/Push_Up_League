@@ -1,19 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check } from 'lucide-react';
+import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check, Sparkles } from 'lucide-react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
 import { TitleShop } from './TitleShop';
 import { PowerUpsShop } from './PowerUpsShop';
 import { CalorieDashboard } from './CalorieDashboard';
+import { UpdatesPage } from './UpdatesPage';
 
 interface MenuProps {
   onClose: () => void;
 }
 
 export const Menu = ({ onClose }: MenuProps) => {
-  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories' | 'legal'>('main');
+  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories' | 'legal' | 'updates'>('main');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -70,6 +71,7 @@ export const Menu = ({ onClose }: MenuProps) => {
             {activeSection === 'powerups' && 'Power-Ups Shop'}
             {activeSection === 'calories' && 'Calorie Tracker'}
             {activeSection === 'legal' && 'Legal & Terms'}
+            {activeSection === 'updates' && 'What\'s New'}
           </h2>
           <button
             onClick={onClose}
@@ -131,6 +133,17 @@ export const Menu = ({ onClose }: MenuProps) => {
                   <span className="font-display text-error">Calorie Tracker</span>
                 </div>
                 <ChevronRight size={20} className="text-error/60 group-hover:text-error transition" />
+              </button>
+
+              <button
+                onClick={() => setActiveSection('updates')}
+                className="w-full p-4 glass-light rounded-lg border border-rank-mythic/50 hover:border-rank-mythic transition flex items-center justify-between group bg-rank-mythic/5"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles size={20} className="text-rank-mythic" />
+                  <span className="font-display text-rank-mythic">What's New</span>
+                </div>
+                <ChevronRight size={20} className="text-rank-mythic/60 group-hover:text-rank-mythic transition" />
               </button>
 
               <button
@@ -550,6 +563,20 @@ export const Menu = ({ onClose }: MenuProps) => {
               </button>
 
               <CalorieDashboard />
+            </div>
+          )}
+
+          {/* Updates Section */}
+          {activeSection === 'updates' && (
+            <div className="space-y-6">
+              <button
+                onClick={() => setActiveSection('main')}
+                className="text-sm text-accent hover:text-accent-light flex items-center gap-2 mb-4"
+              >
+                ← Back to Menu
+              </button>
+
+              <UpdatesPage onBack={() => setActiveSection('main')} />
             </div>
           )}
 
