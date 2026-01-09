@@ -39,7 +39,12 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 
+# TypeScript
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
 # Core Module - Keep Private (Maintained in Separate Repo)
 # Core files exist locally but are NOT tracked in this repo
 # Private repo: https://github.com/godambassador7-lab/push-up-league-core
 /pushup-league-core/
+/core-repo/
