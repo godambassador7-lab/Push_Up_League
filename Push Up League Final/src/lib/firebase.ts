@@ -114,6 +114,10 @@ export interface FirestoreUser {
   personalBest: number;
   dailyGoal: number;
   streakFreezes: number;
+  waiverAccepted?: boolean;
+  waiverAcceptedAt?: string | null;
+  waiverVersion?: string | null;
+  waiverSignatureName?: string | null;
 }
 
 export interface FirestoreWorkout {
