@@ -845,5 +845,17 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     set({ dailyGoal: goal });
   },
 
-  setBodyWeight: (weightKg: number) => set({ bodyWeightKg: Math.max(40, Math.min(200, weightKg)) }),
+  setBodyWeight: (weightKg: number) => {
+    const state = get();
+    set({ bodyWeightKg: Math.max(40, Math.min(200, weightKg)) });
+
+    // Trigger immediate sync to Firebase if authenticated
+    if (state.isAuthenticated) {
+      import('./syncManager').then(({ syncManager }) => {
+        syncManager.forceSyncNow().catch(err => {
+          console.error('Failed to sync body weight to Firebase:', err);
+        });
+      });
+    }
+  },
 }));
