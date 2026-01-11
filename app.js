@@ -3,15 +3,25 @@ import { firebaseConfig } from './firebase.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
          createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 const appFB = initializeApp(firebaseConfig);
 const auth = getAuth(appFB);
 const provider = new GoogleAuthProvider();
+const db = getFirestore(appFB);
+
+let remoteReady = false;
+let isApplyingRemote = false;
+let remoteSaveTimer = null;
+let queueRemoteSave = ()=>{};
 
 const store = {
   key:'pul-v3',
   load(){ try{return JSON.parse(localStorage.getItem(this.key))||{}}catch(e){return{}} },
-  save(d){ localStorage.setItem(this.key, JSON.stringify(d)) }
+  save(d, opts){ 
+    localStorage.setItem(this.key, JSON.stringify(d));
+    if(!opts || !opts.skipRemote) queueRemoteSave();
+  }
 };
 
 const state = Object.assign({
@@ -25,7 +35,8 @@ const state = Object.assign({
   activeTitle:null,
   achievements:{},
   typeTotals:{},
-  totalReps:0
+  totalReps:0,
+  lastUpdated:0
 }, store.load());
 
 const PUSH_TYPES = ['Standard','Wide','Diamond','Incline','Decline','Plyometric','Archer','Pike','Pseudo Planche','Handstand Assist'];
@@ -44,6 +55,86 @@ function toast(msg){
   el.className='chip'; el.style.position='fixed'; el.style.bottom='16px'; el.style.right='16px'; el.style.zIndex='1000';
   el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2400);
 }
+
+const SYNC_FIELDS = ['xp','integrity','streak','lockDays','lastLogISO','titlesOwned','activeTitle','achievements','typeTotals','totalReps','lastUpdated'];
+function pickState(src){
+  const out={};
+  SYNC_FIELDS.forEach((k)=>{ if(src[k] !== undefined) out[k]=src[k]; });
+  return out;
+}
+function normalizeState(raw){
+  const base={
+    xp:0, integrity:100, streak:0, lockDays:[1,3,5], lastLogISO:null,
+    titlesOwned:[], activeTitle:null, achievements:{}, typeTotals:{}, totalReps:0, lastUpdated:0
+  };
+  const cleaned=Object.assign({}, base, raw||{});
+  cleaned.lockDays = Array.isArray(cleaned.lockDays) ? cleaned.lockDays : base.lockDays.slice();
+  cleaned.titlesOwned = Array.isArray(cleaned.titlesOwned) ? cleaned.titlesOwned : [];
+  cleaned.achievements = cleaned.achievements && typeof cleaned.achievements === 'object' ? cleaned.achievements : {};
+  cleaned.typeTotals = cleaned.typeTotals && typeof cleaned.typeTotals === 'object' ? cleaned.typeTotals : {};
+  cleaned.lastUpdated = typeof cleaned.lastUpdated === 'number' ? cleaned.lastUpdated : 0;
+  return cleaned;
+}
+function mergeStates(local, remote){
+  const l=normalizeState(local);
+  const r=normalizeState(remote);
+  const lu=l.lastUpdated||0;
+  const ru=r.lastUpdated||0;
+  if(ru > lu) return r;
+  if(lu > ru) return l;
+  const merged=Object.assign({}, l);
+  merged.xp = Math.max(l.xp||0, r.xp||0);
+  merged.integrity = Math.max(l.integrity||0, r.integrity||0);
+  merged.streak = Math.max(l.streak||0, r.streak||0);
+  merged.totalReps = Math.max(l.totalReps||0, r.totalReps||0);
+  merged.lastLogISO = l.lastLogISO || r.lastLogISO;
+  merged.lockDays = Array.from(new Set([...(l.lockDays||[]), ...(r.lockDays||[])]));
+  merged.titlesOwned = Array.from(new Set([...(l.titlesOwned||[]), ...(r.titlesOwned||[])]));
+  merged.activeTitle = l.activeTitle || r.activeTitle || null;
+  merged.achievements = Object.assign({}, r.achievements||{}, l.achievements||{});
+  merged.typeTotals = Object.assign({}, r.typeTotals||{}, l.typeTotals||{});
+  merged.lastUpdated = Math.max(lu, ru);
+  return merged;
+}
+
+async function loadRemoteState(user){
+  remoteReady = false;
+  try{
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if(snap.exists()){
+      const merged = mergeStates(state, snap.data());
+      isApplyingRemote = true;
+      Object.assign(state, merged);
+      store.save(state, {skipRemote:true});
+      isApplyingRemote = false;
+      render();
+    }
+  }catch(e){
+    console.warn('Remote sync load failed:', e);
+  }
+  remoteReady = true;
+  queueRemoteSave();
+}
+
+queueRemoteSave = function(){
+  if(!state.user || !remoteReady || isApplyingRemote) return;
+  if(remoteSaveTimer) clearTimeout(remoteSaveTimer);
+  remoteSaveTimer = setTimeout(async()=>{
+    if(!state.user || !remoteReady) return;
+    const payload = normalizeState(pickState(state));
+    payload.lastUpdated = Date.now();
+    isApplyingRemote = true;
+    state.lastUpdated = payload.lastUpdated;
+    store.save(state, {skipRemote:true});
+    isApplyingRemote = false;
+    try{
+      await setDoc(doc(db, 'users', state.user.uid), payload, { merge:true });
+    }catch(e){
+      console.warn('Remote sync save failed:', e);
+    }
+  }, 500);
+};
 
 function setIntegrity(by){ state.integrity = Math.max(0, Math.min(100, state.integrity + by)); }
 function integrityGuard(loggedReps){
@@ -144,6 +235,8 @@ function bindAuth(){
     $('#userBox').textContent = user ? (user.displayName||user.email) : 'Guest';
     $('#signInBtn').classList.toggle('hidden', !!user);
     $('#signOutBtn').classList.toggle('hidden', !user);
+    if(user){ loadRemoteState(user); }
+    else { remoteReady = false; }
   });
   $('#googleBtn').addEventListener('click', async()=>{ try{await signInWithPopup(auth, provider); toast('Signed in.');}catch(e){toast(e.message);} });
   $('#emailCreateBtn').addEventListener('click', async()=>{
