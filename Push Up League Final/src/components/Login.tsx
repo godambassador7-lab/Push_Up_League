@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { loginUser, signInWithGoogle, getUserProfile, createUserProfile } from '@/lib/firebase';
 import { useEnhancedStore } from '@/lib/enhancedStore';
+import { syncManager } from '@/lib/syncManager';
 import { Mail, Lock, LogIn } from 'lucide-react';
 
 interface LoginProps {
@@ -34,11 +35,11 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
       // Update local store
       await login(email, password);
 
-      // Give sync manager more time to load all data from Firebase
+      // Wait for sync manager to finish loading all data from Firebase
       // The onAuthChange listener in syncManager will trigger automatically
       // and load profile, workouts, and achievements
       console.log('⏳ Waiting for Firebase data to load...');
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await syncManager.waitForLoginLoad();
 
       setLoading(false);
 
@@ -91,9 +92,9 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
         // Update local store to authenticated state
         await login(result.user.email || '', '');
 
-        // Give sync manager more time to load all data from Firebase
+        // Wait for sync manager to finish loading all data from Firebase
         console.log('⏳ Waiting for Firebase data to load...');
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        await syncManager.waitForLoginLoad();
       }
 
       setLoading(false);

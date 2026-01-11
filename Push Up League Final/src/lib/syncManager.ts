@@ -22,6 +22,8 @@ export class SyncManager {
   private unsubscribeWorkouts: (() => void) | null = null;
   private syncInterval: NodeJS.Timeout | null = null;
   private lastSyncTimestamp: number = 0;
+  private loginLoadPromise: Promise<void> | null = null;
+  private loginLoadResolve: (() => void) | null = null;
 
   private constructor() {}
 
@@ -55,10 +57,26 @@ export class SyncManager {
   }
 
   /**
+   * Wait for login data to finish loading
+   */
+  async waitForLoginLoad(): Promise<void> {
+    if (this.loginLoadPromise) {
+      console.log('⏳ Waiting for login data load to complete...');
+      await this.loginLoadPromise;
+      console.log('✅ Login data load complete!');
+    }
+  }
+
+  /**
    * Handle user login - load data from Firebase
    */
   private async handleUserLogin(user: User) {
     const store = useEnhancedStore.getState();
+
+    // Create a new promise for this login session
+    this.loginLoadPromise = new Promise((resolve) => {
+      this.loginLoadResolve = resolve;
+    });
 
     try {
       console.log('🔄 Loading user data from Firebase for:', user.uid);
@@ -175,8 +193,20 @@ export class SyncManager {
       // Save to localStorage immediately after initial load
       this.saveToLocalStorage();
       console.log('💾 Data saved to localStorage');
+
+      // Resolve the login load promise
+      if (this.loginLoadResolve) {
+        this.loginLoadResolve();
+        this.loginLoadResolve = null;
+      }
     } catch (error) {
       console.error('❌ Error loading user data from Firebase:', error);
+
+      // Resolve the promise even on error to avoid hanging
+      if (this.loginLoadResolve) {
+        this.loginLoadResolve();
+        this.loginLoadResolve = null;
+      }
     }
   }
 
