@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useUserStore } from '@/lib/store';
-import { calculateCalories, calculateWeeklyStats, lbsToKg, kgToLbs, getCalorieBurnMessage } from '@/lib/calorieCalculator';
+import { useEnhancedStore } from '@/lib/enhancedStore';
+import { calculateCalories, calculateWeeklyStats, calculateMultiSetCalories, lbsToKg, kgToLbs, getCalorieBurnMessage } from '@/lib/calorieCalculator';
 import { Flame, TrendingUp, Award, Settings as SettingsIcon, Info } from 'lucide-react';
 
 export const CalorieDashboard = () => {
-  const { workouts, bodyWeightKg, setBodyWeight } = useUserStore();
+  const { workouts, bodyWeightKg, setBodyWeight } = useEnhancedStore();
   const [showSettings, setShowSettings] = useState(false);
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('lbs');
   const [editingWeight, setEditingWeight] = useState(false);
@@ -21,8 +21,18 @@ export const CalorieDashboard = () => {
 
     let total = 0;
     todayWorkouts.forEach(w => {
-      const { calories } = calculateCalories(w.pushups, 'standard', bodyWeightKg);
-      total += calories;
+      if (w.sets && w.sets.length > 0) {
+        // Use multi-set calculation with actual push-up types
+        const calories = calculateMultiSetCalories(
+          w.sets.map(set => ({ reps: set.reps, pushupType: set.type })),
+          bodyWeightKg
+        );
+        total += calories;
+      } else {
+        // Fallback to standard calculation
+        const { calories } = calculateCalories(w.pushups, 'standard', bodyWeightKg);
+        total += calories;
+      }
     });
 
     return Math.round(total * 10) / 10;
@@ -30,11 +40,28 @@ export const CalorieDashboard = () => {
 
   // Calculate weekly stats
   const weeklyStats = useMemo(() => {
-    const workoutData = workouts.map(w => ({
-      date: w.date,
-      reps: w.pushups,
-      pushupType: 'standard' as const,
-    }));
+    // Flatten workouts with sets into individual entries
+    const workoutData: Array<{ date: string; reps: number; pushupType: any }> = [];
+
+    workouts.forEach(w => {
+      if (w.sets && w.sets.length > 0) {
+        // Add each set as a separate entry
+        w.sets.forEach(set => {
+          workoutData.push({
+            date: w.date,
+            reps: set.reps,
+            pushupType: set.type,
+          });
+        });
+      } else {
+        // Add as standard push-up
+        workoutData.push({
+          date: w.date,
+          reps: w.pushups,
+          pushupType: 'standard' as const,
+        });
+      }
+    });
 
     return calculateWeeklyStats(workoutData, bodyWeightKg);
   }, [workouts, bodyWeightKg]);
