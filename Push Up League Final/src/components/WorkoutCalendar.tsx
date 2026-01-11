@@ -9,7 +9,8 @@ import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target, Cale
 export const WorkoutCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  // Mobile defaults to week view, desktop defaults to month view
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('week');
   const workouts = useEnhancedStore((state) => state.workouts);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const lockDay = useEnhancedStore((state) => state.lockDay);
@@ -158,8 +159,8 @@ export const WorkoutCalendar = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* View Toggle */}
-            <div className="flex gap-1 glass-light rounded-lg p-1">
+            {/* View Toggle - Hidden on mobile, only show on larger screens */}
+            <div className="hidden md:flex gap-1 glass-light rounded-lg p-1">
               <button
                 onClick={() => setViewMode('month')}
                 className={`px-3 py-1.5 rounded text-xs font-bold transition ${
@@ -200,16 +201,18 @@ export const WorkoutCalendar = () => {
           </div>
         </div>
 
-      {/* Day names */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
-        {dayNames.map((name) => (
-          <div key={name} className="text-center text-xs text-gray-500 font-display uppercase py-2">
-            {name}
-          </div>
-        ))}
-      </div>
+      {/* Day names - only show for month view */}
+      {viewMode === 'month' && (
+        <div className="grid grid-cols-7 gap-2 mb-2">
+          {dayNames.map((name) => (
+            <div key={name} className="text-center text-xs text-gray-500 font-display uppercase py-2">
+              {name}
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Month View */}
+      {/* Month View - Hidden on mobile (md:block) */}
       {viewMode === 'month' && (
         <div className="grid grid-cols-7 gap-2">
           {calendarCells.map((day, index) => {
@@ -312,9 +315,10 @@ export const WorkoutCalendar = () => {
         </div>
       )}
 
-      {/* Week View */}
+      {/* Week View - Horizontally scrollable on mobile */}
       {viewMode === 'week' && (
-        <div className="grid grid-cols-7 gap-3 sm:gap-4">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex md:grid md:grid-cols-7 gap-3 sm:gap-4 min-w-max md:min-w-0">
           {weekDays.map((date, index) => {
             const workout = getWorkoutForFullDate(date);
             const dateKey = date.toISOString().split('T')[0];
@@ -330,7 +334,7 @@ export const WorkoutCalendar = () => {
             return (
               <div
                 key={dateKey}
-                className={`relative rounded-lg transition min-h-[200px] sm:min-h-[240px] ${
+                className={`relative rounded-lg transition min-h-[200px] sm:min-h-[240px] w-[280px] md:w-auto flex-shrink-0 ${
                   isToday
                     ? 'glass-border ring-2 ring-accent'
                     : hasWorkout
@@ -421,6 +425,7 @@ export const WorkoutCalendar = () => {
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
