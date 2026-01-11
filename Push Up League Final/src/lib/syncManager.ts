@@ -97,14 +97,7 @@ export class SyncManager {
       this.suppressAutoSync = true;
       console.log('🔄 Loading user data from Firebase for:', user.uid);
 
-      // Save current local state before loading from Firebase
-      const localWorkouts = [...store.workouts];
-      const localTotalXp = store.totalXp;
-      const localCoins = store.coins;
-
-      console.log(`📦 Local state before sync: ${localWorkouts.length} workouts, ${localTotalXp} XP`);
-
-      // Load user profile from Firebase
+      // Load user profile from Firebase using the Firebase auth UID
       const profile = await getUserProfile(user.uid);
 
       if (profile) {
@@ -138,13 +131,6 @@ export class SyncManager {
           personalBest: profile.personalBest,
           dailyGoal: profile.dailyGoal,
           streakFreezes: profile.streakFreezes,
-          bodyWeightKg: (profile as any).bodyWeightKg || 77,
-          totalLifetimePushups: (profile as any).totalLifetimePushups || 0,
-          variationStats: (profile as any).variationStats || useEnhancedStore.getState().variationStats,
-          variationPBs: (profile as any).variationPBs || useEnhancedStore.getState().variationPBs,
-          purchasedTitles: (profile as any).purchasedTitles || [],
-          activeTitle: (profile as any).activeTitle || null,
-          unlockedAchievements: (profile as any).unlockedAchievements || [],
         });
       } else {
         // No profile in Firebase - create one with local data
@@ -179,35 +165,16 @@ export class SyncManager {
       }
 
       // Load workouts from Firebase
-      const firebaseWorkouts = await getUserWorkouts(user.uid);
-      console.log(`📊 Loaded ${firebaseWorkouts.length} workouts from Firebase`);
+      const workouts = await getUserWorkouts(user.uid);
+      console.log(`📊 Loaded ${workouts.length} workouts from Firebase`);
 
-      // Merge logic: if Firebase is empty but we have local workouts, keep local and upload
-      if (firebaseWorkouts.length === 0 && localWorkouts.length > 0) {
-        console.log(`📤 Firebase empty but found ${localWorkouts.length} local workouts - will upload`);
-        // Keep local workouts and trigger immediate upload
-        useEnhancedStore.setState({ userId: user.uid });
-
-        // Upload local workouts to Firebase immediately
-        console.log('⬆️ Uploading local workouts to Firebase...');
-        for (const workout of localWorkouts) {
-          await saveWorkout({
-            ...workout,
-            sets: workout.sets as any,
-            userId: user.uid,
-            createdAt: null as any,
-          });
-        }
-        console.log(`✅ Uploaded ${localWorkouts.length} workout(s) to Firebase`);
-      } else if (firebaseWorkouts.length > 0) {
-        // Firebase has workouts - use them
-        console.log(`☁️ Using ${firebaseWorkouts.length} workouts from Firebase`);
+      if (workouts.length > 0) {
         useEnhancedStore.setState({
-          workouts: firebaseWorkouts.map(w => ({
+          workouts: workouts.map(w => ({
             id: w.id,
             date: w.date,
             pushups: w.pushups,
-            sets: w.sets as any,
+            sets: w.sets as any, // Firebase stores number, will migrate to WorkoutSet[] later
             xpEarned: w.xpEarned,
             coinsEarned: w.coinsEarned || 0,
             goalCompleted: w.goalCompleted || false,
@@ -218,7 +185,7 @@ export class SyncManager {
           })),
         });
       } else {
-        console.log('ℹ️ No workouts in Firebase or locally');
+        useEnhancedStore.setState({ workouts: [] });
       }
 
       // Load achievements (only if authenticated)
