@@ -35,7 +35,7 @@ export const CalorieDashboard = () => {
       }
     });
 
-    return Math.round(total * 10) / 10;
+    return Math.round(total * 100) / 100;
   }, [workouts, bodyWeightKg]);
 
   // Calculate weekly stats

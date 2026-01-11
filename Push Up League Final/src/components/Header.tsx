@@ -56,10 +56,6 @@ export const Header = () => {
                   </div>
                 )}
               </div>
-              <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                <StreakFlame streak={currentStreak} isBroken={isBroken} size={12} />
-                {currentStreak} day streak
-              </div>
             </div>
 
             {/* Divider - Hidden on mobile */}

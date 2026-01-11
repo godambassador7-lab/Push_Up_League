@@ -70,7 +70,7 @@ export function calculateCalories(
 ): CalorieEstimate {
   const base = calculateBaseCaloriesPerRep(bodyWeightKg);
   const multiplier = getDifficultyMultiplier(pushupType);
-  const calories = Math.round(reps * base * multiplier * 10) / 10; // Round to 1 decimal
+  const calories = Math.round(reps * base * multiplier * 100) / 100; // Round to 2 decimals
 
   // Generate contextual message
   let message = '';
@@ -148,7 +148,7 @@ export function calculateWeeklyStats(
     totalCalories += stats.calories;
     totalReps += stats.reps;
     if (stats.calories > highestDay.calories) {
-      highestDay = { date, calories: stats.calories };
+      highestDay = { date, calories: Math.round(stats.calories * 100) / 100 };
     }
   });
 
@@ -156,9 +156,9 @@ export function calculateWeeklyStats(
   const afterburnBonus = totalReps > 300; // High-volume week threshold
 
   return {
-    totalCalories: Math.round(totalCalories * 10) / 10,
+    totalCalories: Math.round(totalCalories * 100) / 100,
     totalReps,
-    averageCaloriesPerDay: Math.round(averageCaloriesPerDay * 10) / 10,
+    averageCaloriesPerDay: Math.round(averageCaloriesPerDay * 100) / 100,
     highestDay,
     afterburnBonus,
   };
