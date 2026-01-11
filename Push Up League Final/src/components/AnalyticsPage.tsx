@@ -272,7 +272,7 @@ export const AnalyticsPage = () => {
         ) : (
           filteredData.map(variation => {
             const typeData = getPushUpTypeData(variation.type);
-            const maxValue = Math.max(...variation.data.map(d => d.value));
+            const maxValue = variation.data.length > 0 ? Math.max(...variation.data.map(d => d.value)) : 1;
 
             return (
               <div key={variation.type} className="glass glass-border rounded-lg p-4 sm:p-6">
