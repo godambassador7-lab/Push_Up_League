@@ -97,6 +97,9 @@ export class SyncManager {
       this.suppressAutoSync = true;
       console.log('🔄 Loading user data from Firebase for:', user.uid);
 
+      // Variable to track old userId for workout migration
+      let oldUserId: string | null = null;
+
       // Load user profile from Firebase using the Firebase auth UID
       const profile = await getUserProfile(user.uid);
 
@@ -107,6 +110,7 @@ export class SyncManager {
         // Fix userId mismatch if profile has old local UUID
         if (profile.userId !== user.uid) {
           console.warn(`⚠️ Fixing userId mismatch: profile has ${profile.userId}, auth has ${user.uid}`);
+          oldUserId = profile.userId; // Save old userId for workout migration
           const { updateUserProfile } = await import('./firebase');
           await updateUserProfile(user.uid, { userId: user.uid });
         }
@@ -172,8 +176,36 @@ export class SyncManager {
       }
 
       // Load workouts from Firebase
-      const workouts = await getUserWorkouts(user.uid);
+      let workouts = await getUserWorkouts(user.uid);
       console.log(`📊 Loaded ${workouts.length} workouts from Firebase`);
+
+      // If no workouts found and we had a userId mismatch, try migrating old workouts
+      if (workouts.length === 0 && oldUserId) {
+        console.log(`🔄 No workouts found with new userId, checking for workouts with old userId: ${oldUserId}`);
+        const oldWorkouts = await getUserWorkouts(oldUserId);
+
+        if (oldWorkouts.length > 0) {
+          console.log(`📦 Found ${oldWorkouts.length} workouts with old userId, migrating to new userId...`);
+          const { db } = await import('./firebase');
+          const { doc, updateDoc } = await import('firebase/firestore');
+
+          // Update all workout documents to use the new userId
+          for (const workout of oldWorkouts) {
+            try {
+              await updateDoc(doc(db, 'workouts', workout.id), {
+                userId: user.uid
+              });
+              console.log(`✅ Migrated workout ${workout.id}`);
+            } catch (error) {
+              console.error(`❌ Failed to migrate workout ${workout.id}:`, error);
+            }
+          }
+
+          // Reload workouts with the correct userId
+          workouts = await getUserWorkouts(user.uid);
+          console.log(`✅ Migration complete! Loaded ${workouts.length} workouts`);
+        }
+      }
 
       if (workouts.length > 0) {
         useEnhancedStore.setState({
