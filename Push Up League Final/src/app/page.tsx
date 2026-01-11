@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { RankBadge } from '@/components/RankBadge';
 import { StreakDisplay } from '@/components/StreakDisplay';
+import { StreakFlame } from '@/components/StreakFlame';
 import { XPBar } from '@/components/XPBar';
 import { WorkoutLogger } from '@/components/WorkoutLogger';
 import { WorkoutLoggerAdvanced } from '@/components/WorkoutLoggerAdvanced';
@@ -274,7 +275,9 @@ export default function Dashboard() {
                     <div className="text-5xl font-black text-hero text-accent text-shadow-glow">{currentStreak}</div>
                     <div className="text-sm text-gray-400 mt-1">BEST {longestStreak}</div>
                   </div>
-                  <div className="text-6xl flex-shrink-0">🔥</div>
+                  <div className="flex-shrink-0">
+                    <StreakFlame streak={currentStreak} isBroken={streakStatus.broken} size={64} />
+                  </div>
                 </div>
               </div>
 
