@@ -34,7 +34,14 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
       // Update local store
       await login(email, password);
 
+      // Give sync manager time to load data from Firebase
+      // The onAuthChange listener in syncManager will trigger automatically
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       setLoading(false);
+
+      // Force page reload to ensure clean state
+      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'An error occurred');
       setLoading(false);
@@ -80,9 +87,15 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
 
         // Update local store to authenticated state
         await login(result.user.email || '', '');
+
+        // Give sync manager time to load data from Firebase
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       setLoading(false);
+
+      // Force page reload to ensure clean state
+      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'An error occurred during Google sign-in');
       setLoading(false);
