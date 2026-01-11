@@ -285,6 +285,33 @@ export const getUserAchievements = async (userId: string) => {
   }
 };
 
+// Check if username is already taken
+export const isUsernameTaken = async (username: string): Promise<boolean> => {
+  try {
+    const q = query(
+      collection(db, 'users'),
+      limit(1000) // Check all users (adjust if you have more than 1000 users)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    // Case-insensitive username comparison
+    const normalizedUsername = username.toLowerCase().trim();
+
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      if (data.username?.toLowerCase().trim() === normalizedUsername) {
+        return true; // Username is taken
+      }
+    }
+
+    return false; // Username is available
+  } catch (error) {
+    console.error('Error checking username:', error);
+    return false; // On error, allow the username (fail open)
+  }
+};
+
 // Get leaderboard (standard)
 export const getStandardLeaderboard = async (limitCount: number = 50) => {
   try {

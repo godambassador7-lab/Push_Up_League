@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { PROFICIENCY_LEVELS, ProficiencyLevel } from '@/lib/worldRecords';
-import { registerUser, createUserProfile, signInWithGoogle, getUserProfile } from '@/lib/firebase';
+import { registerUser, createUserProfile, signInWithGoogle, getUserProfile, isUsernameTaken } from '@/lib/firebase';
 import { User, Mail, Zap, AlertTriangle, Lock } from 'lucide-react';
 
 interface OnboardingWithAuthProps {
@@ -44,6 +44,22 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
     } else {
       setShowWorldRecordWarning(false);
     }
+  };
+
+  const handleContinueToStep2 = async () => {
+    setError('');
+    setLoading(true);
+
+    // Validate username is not taken
+    const usernameTaken = await isUsernameTaken(username);
+    if (usernameTaken) {
+      setError(`Username "${username}" is already taken. Please choose a different username.`);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setStep(2);
   };
 
   const handleGoogleSignIn = async () => {
@@ -89,6 +105,14 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
     setLoading(true);
 
     try {
+      // Validate username is not taken
+      const usernameTaken = await isUsernameTaken(username);
+      if (usernameTaken) {
+        setError(`Username "${username}" is already taken. Please choose a different username.`);
+        setLoading(false);
+        return;
+      }
+
       // For Google users, we need to get the current Firebase user
       const { auth } = await import('@/lib/firebase');
       const currentUser = auth.currentUser;
@@ -153,6 +177,14 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    // Validate username is not taken (double-check before final submission)
+    const usernameTaken = await isUsernameTaken(username);
+    if (usernameTaken) {
+      setError(`Username "${username}" is already taken. Please choose a different username.`);
       setLoading(false);
       return;
     }
@@ -301,11 +333,11 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
             </div>
 
             <button
-              onClick={() => setStep(2)}
-              disabled={!email || !password || !confirmPassword || !username}
+              onClick={handleContinueToStep2}
+              disabled={!email || !password || !confirmPassword || !username || loading}
               className="w-full py-3 bg-gradient-to-r from-accent to-accent-light text-dark font-bold rounded-lg hover:shadow-lg hover:shadow-accent/50 transition uppercase tracking-wider font-display disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continue
+              {loading ? 'Checking username...' : 'Continue'}
             </button>
 
             {/* Divider */}

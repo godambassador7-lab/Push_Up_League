@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { loginUser, signInWithGoogle, getUserProfile, createUserProfile } from '@/lib/firebase';
+import { loginUser, signInWithGoogle, getUserProfile, createUserProfile, isUsernameTaken } from '@/lib/firebase';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
 import { Mail, Lock, LogIn } from 'lucide-react';
@@ -37,8 +37,21 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
 
       if (!userProfile) {
         console.log('📝 Creating new user profile for email login...');
+
+        // Generate a unique username
+        let baseUsername = result.user.email?.split('@')[0] || 'User';
+        let username = baseUsername;
+        let usernameExists = await isUsernameTaken(username);
+        let counter = 1;
+
+        while (usernameExists) {
+          username = `${baseUsername}${counter}`;
+          usernameExists = await isUsernameTaken(username);
+          counter++;
+        }
+
         await createUserProfile(result.user.uid, {
-          username: result.user.email?.split('@')[0] || 'User',
+          username,
           email: result.user.email || email,
           proficiency: 'beginner',
           maxPushupsInOneSet: 0,
@@ -93,9 +106,21 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
         const userProfile = await getUserProfile(result.user.uid);
 
         if (!userProfile) {
+          // Generate a unique username
+          let baseUsername = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+          let username = baseUsername;
+          let usernameExists = await isUsernameTaken(username);
+          let counter = 1;
+
+          while (usernameExists) {
+            username = `${baseUsername}${counter}`;
+            usernameExists = await isUsernameTaken(username);
+            counter++;
+          }
+
           // Create new user profile for Google sign-in
           await createUserProfile(result.user.uid, {
-            username: result.user.displayName || result.user.email?.split('@')[0] || 'User',
+            username,
             email: result.user.email || '',
             proficiency: 'beginner',
             maxPushupsInOneSet: 0,
