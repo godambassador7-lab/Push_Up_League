@@ -131,6 +131,9 @@ export interface UserState {
   personalBest: number;
   variationPBs: Record<PushUpType, number>;
 
+  // Calorie Tracking
+  bodyWeightKg: number; // User's body weight in kilograms
+
   // Actions
   setUsername: (name: string) => void;
   setUserProfile: (email: string, proficiency: ProficiencyLevel, maxPushups: number) => void;
@@ -158,6 +161,7 @@ export interface UserState {
   getStreakStatus: () => { days: number; broken: boolean };
   addAchievement: (title: string, description: string, type: Achievement['type']) => void;
   updateDailyGoal: () => void;
+  setBodyWeight: (weightKg: number) => void;
 }
 
 const getPowerUpPurchaseDefaults = () => ({
@@ -231,6 +235,7 @@ const getInitialState = () => ({
     explosive: 0,
     handstand: 0,
   },
+  bodyWeightKg: 77, // Default: 77kg (~170lbs)
 });
 
 export const useEnhancedStore = create<UserState>((set, get) => ({
@@ -819,4 +824,6 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     const goal = calculateDailyGoal(state.proficiency, state.currentStreak, state.personalBest);
     set({ dailyGoal: goal });
   },
+
+  setBodyWeight: (weightKg: number) => set({ bodyWeightKg: Math.max(40, Math.min(200, weightKg)) }),
 }));

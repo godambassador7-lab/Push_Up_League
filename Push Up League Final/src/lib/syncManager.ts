@@ -77,6 +77,11 @@ export class SyncManager {
           proficiency: profile.proficiency as any,
           maxPushupsInOneSet: profile.maxPushupsInOneSet,
           isWorldRecordCandidate: profile.isWorldRecordCandidate,
+          waiverAccepted: profile.waiverAccepted || false,
+          waiverAcceptedAt: profile.waiverAcceptedAt || null,
+          waiverVersion: profile.waiverVersion || null,
+          waiverSignatureName: profile.waiverSignatureName || null,
+          accountCreatedAt: profile.accountCreatedAt || null,
           totalXp: profile.totalXp,
           coins: profile.coins,
           currentRank: profile.currentRank,
@@ -86,6 +91,13 @@ export class SyncManager {
           personalBest: profile.personalBest,
           dailyGoal: profile.dailyGoal,
           streakFreezes: profile.streakFreezes,
+          bodyWeightKg: (profile as any).bodyWeightKg || 77,
+          totalLifetimePushups: (profile as any).totalLifetimePushups || 0,
+          variationStats: (profile as any).variationStats || useEnhancedStore.getState().variationStats,
+          variationPBs: (profile as any).variationPBs || useEnhancedStore.getState().variationPBs,
+          purchasedTitles: (profile as any).purchasedTitles || [],
+          activeTitle: (profile as any).activeTitle || null,
+          unlockedAchievements: (profile as any).unlockedAchievements || [],
         });
       }
 
@@ -178,7 +190,7 @@ export class SyncManager {
     }
 
     try {
-      // Sync user profile
+      // Sync user profile with all fields
       await updateUserProfile(store.userId, {
         userId: store.userId,
         username: store.username,
@@ -186,6 +198,11 @@ export class SyncManager {
         proficiency: store.proficiency,
         maxPushupsInOneSet: store.maxPushupsInOneSet,
         isWorldRecordCandidate: store.isWorldRecordCandidate,
+        waiverAccepted: store.waiverAccepted,
+        waiverAcceptedAt: store.waiverAcceptedAt,
+        waiverVersion: store.waiverVersion,
+        waiverSignatureName: store.waiverSignatureName,
+        accountCreatedAt: store.accountCreatedAt,
         totalXp: store.totalXp,
         coins: store.coins,
         currentRank: store.currentRank,
@@ -195,7 +212,14 @@ export class SyncManager {
         personalBest: store.personalBest,
         dailyGoal: store.dailyGoal,
         streakFreezes: store.streakFreezes,
-      });
+        bodyWeightKg: store.bodyWeightKg,
+        totalLifetimePushups: store.totalLifetimePushups,
+        variationStats: store.variationStats,
+        variationPBs: store.variationPBs,
+        purchasedTitles: store.purchasedTitles,
+        activeTitle: store.activeTitle,
+        unlockedAchievements: store.unlockedAchievements,
+      } as any);
 
       // Sync workouts (only new ones)
       const firebaseWorkouts = await getUserWorkouts(store.userId);
@@ -264,6 +288,11 @@ export class SyncManager {
       proficiency: store.proficiency,
       maxPushupsInOneSet: store.maxPushupsInOneSet,
       isWorldRecordCandidate: store.isWorldRecordCandidate,
+      waiverAccepted: store.waiverAccepted,
+      waiverAcceptedAt: store.waiverAcceptedAt,
+      waiverVersion: store.waiverVersion,
+      waiverSignatureName: store.waiverSignatureName,
+      accountCreatedAt: store.accountCreatedAt,
       totalXp: store.totalXp,
       coins: store.coins,
       currentRank: store.currentRank,
@@ -276,6 +305,13 @@ export class SyncManager {
       dailyGoal: store.dailyGoal,
       streakFreezes: store.streakFreezes,
       powerUpPurchaseHistory: store.powerUpPurchaseHistory,
+      bodyWeightKg: store.bodyWeightKg,
+      totalLifetimePushups: store.totalLifetimePushups,
+      variationStats: store.variationStats,
+      variationPBs: store.variationPBs,
+      purchasedTitles: store.purchasedTitles,
+      activeTitle: store.activeTitle,
+      unlockedAchievements: store.unlockedAchievements,
       lastSyncTimestamp: this.lastSyncTimestamp,
     };
 
@@ -303,6 +339,11 @@ export class SyncManager {
           proficiency: data.proficiency || 'beginner',
           maxPushupsInOneSet: data.maxPushupsInOneSet || 10,
           isWorldRecordCandidate: data.isWorldRecordCandidate || false,
+          waiverAccepted: data.waiverAccepted || false,
+          waiverAcceptedAt: data.waiverAcceptedAt || null,
+          waiverVersion: data.waiverVersion || null,
+          waiverSignatureName: data.waiverSignatureName || null,
+          accountCreatedAt: data.accountCreatedAt || null,
           totalXp: data.totalXp || 0,
           coins: data.coins || 0,
           currentRank: data.currentRank || 1,
@@ -315,6 +356,13 @@ export class SyncManager {
           dailyGoal: data.dailyGoal || 50,
           streakFreezes: data.streakFreezes || 1,
           powerUpPurchaseHistory: data.powerUpPurchaseHistory || useEnhancedStore.getState().powerUpPurchaseHistory,
+          bodyWeightKg: data.bodyWeightKg || 77,
+          totalLifetimePushups: data.totalLifetimePushups || 0,
+          variationStats: data.variationStats || useEnhancedStore.getState().variationStats,
+          variationPBs: data.variationPBs || useEnhancedStore.getState().variationPBs,
+          purchasedTitles: data.purchasedTitles || [],
+          activeTitle: data.activeTitle || null,
+          unlockedAchievements: data.unlockedAchievements || [],
         });
 
         this.lastSyncTimestamp = data.lastSyncTimestamp || 0;
