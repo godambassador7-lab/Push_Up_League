@@ -169,8 +169,20 @@ export class SyncManager {
       // Merge logic: if Firebase is empty but we have local workouts, keep local and upload
       if (firebaseWorkouts.length === 0 && localWorkouts.length > 0) {
         console.log(`📤 Firebase empty but found ${localWorkouts.length} local workouts - will upload`);
-        // Keep local workouts, they'll be synced to Firebase later
+        // Keep local workouts and trigger immediate upload
         useEnhancedStore.setState({ userId: user.uid });
+
+        // Upload local workouts to Firebase immediately
+        console.log('⬆️ Uploading local workouts to Firebase...');
+        for (const workout of localWorkouts) {
+          await saveWorkout({
+            ...workout,
+            sets: workout.sets as any,
+            userId: user.uid,
+            createdAt: null as any,
+          });
+        }
+        console.log(`✅ Uploaded ${localWorkouts.length} workout(s) to Firebase`);
       } else if (firebaseWorkouts.length > 0) {
         // Firebase has workouts - use them
         console.log(`☁️ Using ${firebaseWorkouts.length} workouts from Firebase`);
