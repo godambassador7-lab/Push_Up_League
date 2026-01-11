@@ -50,6 +50,13 @@ export const Menu = ({ onClose }: MenuProps) => {
     }
   };
 
+  const handleForceSync = async () => {
+    // Clear localStorage and force reload from Firebase
+    localStorage.removeItem('pushup-league-data');
+    await syncManager.forceSyncNow();
+    window.location.reload();
+  };
+
   const handleNotificationToggle = () => {
     setNotificationsEnabled(!notificationsEnabled);
     if (!notificationsEnabled && 'Notification' in window) {
@@ -360,6 +367,24 @@ export const Menu = ({ onClose }: MenuProps) => {
                 {/* Danger Zone */}
                 <div className="glass-light rounded-lg border border-red-500/30 p-4 mt-6">
                   <div className="text-xs text-red-400 uppercase tracking-wider font-display mb-3">Danger Zone</div>
+
+                  {isAuthenticated && (
+                    <div className="mb-4">
+                      <button
+                        onClick={handleForceSync}
+                        className="w-full p-3 glass-light rounded-lg border border-warning/50 hover:border-warning transition flex items-center justify-center gap-2 text-warning hover:text-warning-light"
+                      >
+                        <Database size={16} />
+                        <span className="text-sm font-display">
+                          Force Sync from Firebase
+                        </span>
+                      </button>
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        Clears local data and reloads from cloud
+                      </p>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleClearData}
                     className="w-full p-3 glass-light rounded-lg border border-red-500/50 hover:border-red-500 transition flex items-center justify-center gap-2 text-red-400 hover:text-red-300"
