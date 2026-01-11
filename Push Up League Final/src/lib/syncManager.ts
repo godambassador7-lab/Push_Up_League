@@ -61,10 +61,14 @@ export class SyncManager {
     const store = useEnhancedStore.getState();
 
     try {
+      console.log('🔄 Loading user data from Firebase for:', user.uid);
+
       // Load user profile from Firebase
       const profile = await getUserProfile(user.uid);
 
       if (profile) {
+        console.log('✅ Profile loaded from Firebase:', profile);
+
         // Update local store with Firebase data
         store.setUserProfile(profile.email, profile.proficiency as any, profile.maxPushupsInOneSet);
 
@@ -99,10 +103,14 @@ export class SyncManager {
           activeTitle: (profile as any).activeTitle || null,
           unlockedAchievements: (profile as any).unlockedAchievements || [],
         });
+      } else {
+        console.warn('⚠️ No profile found in Firebase for user:', user.uid);
       }
 
       // Load workouts
       const workouts = await getUserWorkouts(user.uid);
+      console.log(`📊 Loaded ${workouts.length} workouts from Firebase`);
+
       if (workouts.length > 0) {
         useEnhancedStore.setState({
           workouts: workouts.map(w => ({
@@ -119,6 +127,8 @@ export class SyncManager {
             lockedAt: w.lockedAt,
           })),
         });
+      } else {
+        console.warn('⚠️ No workouts found in Firebase for user:', user.uid);
       }
 
       // Load achievements (only if authenticated)
@@ -142,6 +152,7 @@ export class SyncManager {
 
       // Subscribe to real-time workout updates
       this.unsubscribeWorkouts = subscribeToUserWorkouts(user.uid, (firebaseWorkouts) => {
+        console.log(`🔔 Real-time update: ${firebaseWorkouts.length} workouts`);
         useEnhancedStore.setState({
           workouts: firebaseWorkouts.map(w => ({
             id: w.id,
@@ -157,12 +168,15 @@ export class SyncManager {
             lockedAt: w.lockedAt,
           })),
         });
+        // Save to localStorage after real-time update
+        this.saveToLocalStorage();
       });
 
-      // Save to localStorage
+      // Save to localStorage immediately after initial load
       this.saveToLocalStorage();
+      console.log('💾 Data saved to localStorage');
     } catch (error) {
-      console.error('Error loading user data from Firebase:', error);
+      console.error('❌ Error loading user data from Firebase:', error);
     }
   }
 
@@ -186,11 +200,15 @@ export class SyncManager {
     const store = useEnhancedStore.getState();
 
     if (!store.isAuthenticated || !store.userId) {
+      console.log('⏭️ Skipping sync - not authenticated');
       return; // Not authenticated, skip sync
     }
 
+    console.log('🔄 Syncing to Firebase...');
+
     try {
       // Sync user profile with all fields
+      console.log('📤 Uploading user profile to Firebase...');
       await updateUserProfile(store.userId, {
         userId: store.userId,
         username: store.username,
@@ -221,10 +239,13 @@ export class SyncManager {
         unlockedAchievements: store.unlockedAchievements,
       } as any);
 
+      console.log('✅ User profile synced to Firebase');
+
       // Sync workouts (only new ones)
       const firebaseWorkouts = await getUserWorkouts(store.userId);
       const firebaseWorkoutIds = new Set(firebaseWorkouts.map(w => w.id));
 
+      let newWorkoutsCount = 0;
       for (const workout of store.workouts) {
         if (!firebaseWorkoutIds.has(workout.id)) {
           // New workout, save to Firebase
@@ -234,7 +255,12 @@ export class SyncManager {
             userId: store.userId,
             createdAt: null as any, // Will be set by Firebase
           });
+          newWorkoutsCount++;
         }
+      }
+
+      if (newWorkoutsCount > 0) {
+        console.log(`✅ Synced ${newWorkoutsCount} new workout(s) to Firebase`);
       }
 
       // Sync achievements (only new ones) - wrap in try-catch to prevent blocking
@@ -256,8 +282,9 @@ export class SyncManager {
       }
 
       this.lastSyncTimestamp = Date.now();
+      console.log('✅ Firebase sync complete');
     } catch (error) {
-      console.error('Error syncing to Firebase:', error);
+      console.error('❌ Error syncing to Firebase:', error);
     }
   }
 
