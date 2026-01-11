@@ -23,6 +23,7 @@ export const WorkoutLoggerAdvanced = () => {
   const [completedSessionChallenges, setCompletedSessionChallenges] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showWaiverModal, setShowWaiverModal] = useState(false);
+  const [lastAddedSetIndex, setLastAddedSetIndex] = useState<number | null>(null);
 
   const logWorkout = useEnhancedStore((state) => state.logWorkout);
   const getTodayWorkout = useEnhancedStore((state) => state.getTodayWorkout);
@@ -35,12 +36,21 @@ export const WorkoutLoggerAdvanced = () => {
   const hasLoggedWorkoutBefore = workouts.length > 0;
 
   const addSet = () => {
+    const newIndex = workoutSets.length;
     setWorkoutSets([...workoutSets, { reps: 10, type: 'standard' as PushUpType }]);
+    setLastAddedSetIndex(newIndex);
   };
 
   const removeSet = (index: number) => {
     if (workoutSets.length > 1) {
       setWorkoutSets(workoutSets.filter((_, i) => i !== index));
+      // Clear highlight if we removed the highlighted set
+      if (lastAddedSetIndex === index) {
+        setLastAddedSetIndex(null);
+      } else if (lastAddedSetIndex !== null && lastAddedSetIndex > index) {
+        // Adjust index if we removed a set before the highlighted one
+        setLastAddedSetIndex(lastAddedSetIndex - 1);
+      }
     }
   };
 
@@ -240,6 +250,7 @@ export const WorkoutLoggerAdvanced = () => {
           {workoutSets.map((set, index) => {
             const typeData = PUSHUP_TYPES[set.type];
             const isTypeSelectorOpen = showTypeSelector === index;
+            const isNewlyAdded = lastAddedSetIndex === index;
             const difficultyColors = {
               beginner: 'text-green-400 border-green-400/50',
               intermediate: 'text-blue-400 border-blue-400/50',
@@ -252,7 +263,7 @@ export const WorkoutLoggerAdvanced = () => {
             return (
               <div
                 key={index}
-                className={`p-3 sm:p-4 glass-light rounded-lg border border-dark-border overflow-visible relative ${isTypeSelectorOpen ? 'z-30' : 'z-0'}`}
+                className={`p-3 sm:p-4 glass-light rounded-lg border overflow-visible relative ${isTypeSelectorOpen ? 'z-30' : 'z-0'} ${isNewlyAdded ? 'border-accent border-2 shadow-lg shadow-accent/20 animate-pulse-border' : 'border-dark-border'}`}
               >
                 <div className="flex items-center gap-2 sm:gap-3">
                   {/* Set Number */}

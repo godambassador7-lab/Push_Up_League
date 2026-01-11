@@ -174,3 +174,19 @@ body::before {
   background-size: 200% 200%;
   animation: shineBorder 3s ease-in-out infinite;
 }
+
+/* Newly added set border pulse animation */
+@keyframes pulseBorder {
+  0%, 100% {
+    border-color: rgba(0, 188, 212, 0.8);
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+  }
+  50% {
+    border-color: rgba(0, 188, 212, 1);
+    box-shadow: 0 0 30px rgba(0, 188, 212, 0.5);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulseBorder 2s ease-in-out infinite;
+}
