@@ -21,6 +21,9 @@ export class SyncManager {
   private static instance: SyncManager;
   private unsubscribeWorkouts: (() => void) | null = null;
   private syncInterval: NodeJS.Timeout | null = null;
+  private autoSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private suppressAutoSync: boolean = false;
+  private unsubscribeAutoSync: (() => void) | null = null;
   private lastSyncTimestamp: number = 0;
   private loginLoadPromise: Promise<void> | null = null;
   private loginLoadResolve: (() => void) | null = null;
@@ -47,13 +50,25 @@ export class SyncManager {
       }
     });
 
-    // Set up periodic sync (every 30 seconds)
-    this.syncInterval = setInterval(() => {
-      this.performPeriodicSync();
-    }, 30000);
-
-    // Load from localStorage on init
-    this.loadFromLocalStorage();
+    // Auto-upload changes after 10s of inactivity (authenticated only)
+    if (!this.unsubscribeAutoSync) {
+      this.unsubscribeAutoSync = useEnhancedStore.subscribe((state, prevState) => {
+        if (!state.isAuthenticated || !state.userId || this.suppressAutoSync) {
+          return;
+        }
+        if (state === prevState) {
+          return;
+        }
+        if (this.autoSyncTimer) {
+          clearTimeout(this.autoSyncTimer);
+        }
+        this.autoSyncTimer = setTimeout(() => {
+          this.syncToFirebase().catch((error) => {
+            console.error('❌ Auto-sync failed:', error);
+          });
+        }, 10000);
+      });
+    }
   }
 
   /**
@@ -79,6 +94,7 @@ export class SyncManager {
     });
 
     try {
+      this.suppressAutoSync = true;
       console.log('🔄 Loading user data from Firebase for:', user.uid);
 
       // Save current local state before loading from Firebase
@@ -242,13 +258,9 @@ export class SyncManager {
             lockedAt: w.lockedAt,
           })),
         });
-        // Save to localStorage after real-time update
-        this.saveToLocalStorage();
       });
 
-      // Save to localStorage immediately after initial load
-      this.saveToLocalStorage();
-      console.log('💾 Data saved to localStorage');
+      this.suppressAutoSync = false;
 
       // Resolve the login load promise
       if (this.loginLoadResolve) {
@@ -257,6 +269,8 @@ export class SyncManager {
       }
     } catch (error) {
       console.error('❌ Error loading user data from Firebase:', error);
+
+      this.suppressAutoSync = false;
 
       // Resolve the promise even on error to avoid hanging
       if (this.loginLoadResolve) {
@@ -274,9 +288,6 @@ export class SyncManager {
       this.unsubscribeWorkouts();
       this.unsubscribeWorkouts = null;
     }
-
-    // Keep local data in localStorage for offline access
-    this.saveToLocalStorage();
   }
 
   /**
@@ -383,9 +394,6 @@ export class SyncManager {
     if (store.isAuthenticated) {
       await this.syncToFirebase();
     }
-
-    // Always save to localStorage
-    this.saveToLocalStorage();
   }
 
   /**
@@ -503,6 +511,13 @@ export class SyncManager {
 
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
+    }
+    if (this.autoSyncTimer) {
+      clearTimeout(this.autoSyncTimer);
+    }
+    if (this.unsubscribeAutoSync) {
+      this.unsubscribeAutoSync();
+      this.unsubscribeAutoSync = null;
     }
   }
 }
