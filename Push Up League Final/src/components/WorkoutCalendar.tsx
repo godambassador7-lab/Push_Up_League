@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
-import { calculateCalories, calculateMultiSetCalories, DEFAULT_BODY_WEIGHT_KG } from '@/lib/calorieCalculator';
+import { calculateCalories, calculateMultiSetCalories, bodyWeightKg } from '@/lib/calorieCalculator';
 import { getPushUpTypeData } from '@/lib/pushupTypes';
 import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target, Calendar as CalendarIcon } from 'lucide-react';
 
@@ -15,6 +15,7 @@ export const WorkoutCalendar = () => {
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const lockDay = useEnhancedStore((state) => state.lockDay);
   const isDayLocked = useEnhancedStore((state) => state.isDayLocked);
+  const bodyWeightKg = useEnhancedStore((state) => state.bodyWeightKg);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -90,7 +91,7 @@ export const WorkoutCalendar = () => {
       return Array.from(grouped.entries()).map(([type, data]) => ({
         type,
         reps: data.reps,
-        calories: calculateCalories(data.reps, type, DEFAULT_BODY_WEIGHT_KG).calories,
+        calories: calculateCalories(data.reps, type, bodyWeightKg).calories,
         label: getPushUpTypeData(type).name,
       }));
     }
@@ -98,7 +99,7 @@ export const WorkoutCalendar = () => {
     return [{
       type: 'standard',
       reps: workout.pushups,
-      calories: calculateCalories(workout.pushups, 'standard', DEFAULT_BODY_WEIGHT_KG).calories,
+      calories: calculateCalories(workout.pushups, 'standard', bodyWeightKg).calories,
       label: getPushUpTypeData('standard').name,
     }];
   };
@@ -107,10 +108,10 @@ export const WorkoutCalendar = () => {
     if (workout.sets && workout.sets.length > 0) {
       return calculateMultiSetCalories(
         workout.sets.map((set) => ({ reps: set.reps, pushupType: set.type })),
-        DEFAULT_BODY_WEIGHT_KG
+        bodyWeightKg
       );
     }
-    return calculateCalories(workout.pushups, 'standard', DEFAULT_BODY_WEIGHT_KG).calories;
+    return calculateCalories(workout.pushups, 'standard', bodyWeightKg).calories;
   };
 
   const handleLockDay = (day: number) => {
