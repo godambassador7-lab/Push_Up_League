@@ -147,19 +147,98 @@ export function checkIntegrity(
 export function calculateDailyGoal(
   proficiency: ProficiencyLevel,
   currentStreak: number,
-  personalBest: number
+  personalBest: number,
+  workoutHistory?: { date: string; pushups: number; goalCompleted?: boolean }[]
 ): number {
   const profData = PROFICIENCY_LEVELS[proficiency];
   const baseGoal = profData.dailyCapacity.min;
 
-  // Progressive goal based on streak
-  const streakMultiplier = 1 + (currentStreak * 0.02); // +2% per day streak
+  // If no workout history, use basic calculation
+  if (!workoutHistory || workoutHistory.length === 0) {
+    const streakMultiplier = 1 + (currentStreak * 0.02);
+    const pbAdjustment = personalBest > 0 ? Math.min(personalBest * 0.8, profData.dailyCapacity.max) : baseGoal;
+    const goal = Math.floor(Math.max(baseGoal, pbAdjustment) * streakMultiplier);
+    return Math.min(goal, profData.dailyCapacity.max);
+  }
 
-  // Personal best consideration
-  const pbAdjustment = personalBest > 0 ? Math.min(personalBest * 0.8, profData.dailyCapacity.max) : baseGoal;
+  // ADAPTIVE ALGORITHM: Analyze last 7 days of performance
+  const today = new Date();
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const goal = Math.floor(Math.max(baseGoal, pbAdjustment) * streakMultiplier);
+  const recentWorkouts = workoutHistory
+    .filter(w => {
+      const workoutDate = new Date(w.date);
+      return workoutDate >= sevenDaysAgo && workoutDate <= today;
+    })
+    .slice(-7);
 
-  // Cap at proficiency max
-  return Math.min(goal, profData.dailyCapacity.max);
+  // Calculate metrics for adaptive adjustment
+  let totalPushups = 0;
+  let goalsCompleted = 0;
+  let goalsMissed = 0;
+
+  recentWorkouts.forEach(w => {
+    totalPushups += w.pushups;
+    if (w.goalCompleted) {
+      goalsCompleted++;
+    } else {
+      goalsMissed++;
+    }
+  });
+
+  const avgDailyPerformance = recentWorkouts.length > 0
+    ? Math.floor(totalPushups / recentWorkouts.length)
+    : baseGoal;
+
+  // Calculate current goal (use baseGoal if no recent workouts)
+  let currentGoal = baseGoal;
+  if (recentWorkouts.length > 0 && recentWorkouts[0].goalCompleted !== undefined) {
+    // Try to infer current goal from recent performance
+    const maxRecentPushups = Math.max(...recentWorkouts.map(w => w.pushups));
+    currentGoal = Math.max(baseGoal, Math.min(maxRecentPushups, profData.dailyCapacity.max));
+  }
+
+  // ADAPTIVE ADJUSTMENT LOGIC
+  let newGoal = currentGoal;
+
+  // Case 1: User consistently exceeds goal (5+ completions in last 7 days)
+  if (goalsCompleted >= 5 && recentWorkouts.length >= 5) {
+    // Increase goal by 15% of average performance above current goal
+    const avgExcess = avgDailyPerformance - currentGoal;
+    if (avgExcess > 0) {
+      newGoal = Math.floor(currentGoal + (avgExcess * 0.15));
+    } else {
+      newGoal = Math.floor(currentGoal * 1.1); // +10% if completing but not exceeding much
+    }
+  }
+  // Case 2: User consistently misses goal (5+ misses in last 7 days)
+  else if (goalsMissed >= 5 && recentWorkouts.length >= 5) {
+    // Decrease goal to 90% of average daily performance
+    newGoal = Math.floor(avgDailyPerformance * 0.9);
+  }
+  // Case 3: Mixed performance - adjust gradually toward average
+  else if (recentWorkouts.length >= 3) {
+    // Move goal 20% toward average performance
+    const targetGoal = Math.floor(avgDailyPerformance * 1.05); // Slightly above average
+    newGoal = Math.floor(currentGoal + (targetGoal - currentGoal) * 0.2);
+  }
+
+  // Apply personal best consideration (minimum floor)
+  if (personalBest > 0) {
+    const pbFloor = Math.floor(personalBest * 0.6); // At least 60% of personal best
+    newGoal = Math.max(newGoal, pbFloor);
+  }
+
+  // Enforce proficiency bounds
+  const minGoal = Math.floor(profData.dailyCapacity.min * 0.8); // Allow 20% below min
+  const maxGoal = profData.dailyCapacity.max;
+
+  newGoal = Math.max(minGoal, Math.min(newGoal, maxGoal));
+
+  // Ensure goal is always at least baseGoal for beginners
+  if (proficiency === 'beginner') {
+    newGoal = Math.max(baseGoal, newGoal);
+  }
+
+  return newGoal;
 }

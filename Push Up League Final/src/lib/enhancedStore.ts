@@ -836,7 +836,12 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
   updateDailyGoal: () => {
     const state = get();
-    const goal = calculateDailyGoal(state.proficiency, state.currentStreak, state.personalBest);
+    const workoutHistory = state.workouts.map(w => ({
+      date: w.date,
+      pushups: w.pushups,
+      goalCompleted: w.goalCompleted
+    }));
+    const goal = calculateDailyGoal(state.proficiency, state.currentStreak, state.personalBest, workoutHistory);
     set({ dailyGoal: goal });
   },
 
