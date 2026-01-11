@@ -29,8 +29,10 @@ export const WorkoutLoggerAdvanced = () => {
   const currentStreak = useEnhancedStore((state) => state.currentStreak);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const waiverAccepted = useEnhancedStore((state) => state.waiverAccepted);
+  const workouts = useEnhancedStore((state) => state.workouts);
 
   const todayWorkout = getTodayWorkout();
+  const hasLoggedWorkoutBefore = workouts.length > 0;
 
   const addSet = () => {
     setWorkoutSets([...workoutSets, { reps: 10, type: 'standard' as PushUpType }]);
@@ -42,9 +44,11 @@ export const WorkoutLoggerAdvanced = () => {
     }
   };
 
-  const updateSetReps = (index: number, reps: number) => {
+  const updateSetReps = (index: number, reps: number | string) => {
     const newSets = [...workoutSets];
-    newSets[index].reps = Math.max(1, reps);
+    // Allow empty string temporarily, but ensure minimum of 1 when blurred
+    const parsedReps = typeof reps === 'string' ? (reps === '' ? 0 : parseInt(reps)) : reps;
+    newSets[index].reps = parsedReps;
     setWorkoutSets(newSets);
   };
 
@@ -121,13 +125,7 @@ export const WorkoutLoggerAdvanced = () => {
     };
   };
 
-  const handleSubmit = () => {
-    // Check if waiver is accepted
-    if (!waiverAccepted) {
-      setShowWaiverModal(true);
-      return;
-    }
-
+  const performWorkoutLog = () => {
     const totalPushups = getTotalPushups();
     let { estimatedXP, estimatedCoins, goalCompleted } = calculateEstimatedRewards();
 
@@ -184,6 +182,16 @@ export const WorkoutLoggerAdvanced = () => {
     setShowSuccessModal(true);
   };
 
+  const handleSubmit = () => {
+    // Only show waiver for first workout if not already accepted
+    if (!hasLoggedWorkoutBefore && !waiverAccepted) {
+      setShowWaiverModal(true);
+      return;
+    }
+
+    performWorkoutLog();
+  };
+
   if (todayWorkout && !showSuccessModal) {
     return (
       <div className="p-4 sm:p-6 rounded-lg glass glass-border">
@@ -207,6 +215,14 @@ export const WorkoutLoggerAdvanced = () => {
       {showSuccessModal && lastWorkoutData && (
         <WorkoutSuccessModal
           onClose={() => setShowSuccessModal(false)}
+          onLogAnother={() => {
+            setShowSuccessModal(false);
+            // Reset to default state for new workout
+            setWorkoutSets([{ reps: 10, type: 'standard' as PushUpType }]);
+            setDailyChallenge(false);
+            setSelectedSessionChallenge(null);
+            setWorkoutStartTime(null);
+          }}
           {...lastWorkoutData}
         />
       )}
@@ -254,8 +270,14 @@ export const WorkoutLoggerAdvanced = () => {
                     </button>
                     <input
                       type="number"
-                      value={set.reps}
-                      onChange={(e) => updateSetReps(index, parseInt(e.target.value) || 1)}
+                      value={set.reps || ''}
+                      onChange={(e) => updateSetReps(index, e.target.value)}
+                      onBlur={(e) => {
+                        // Ensure minimum of 1 when user leaves the field
+                        if (!e.target.value || parseInt(e.target.value) < 1) {
+                          updateSetReps(index, 1);
+                        }
+                      }}
                       className="w-12 sm:w-16 glass-light border border-dark-border rounded px-1 sm:px-2 py-1 text-center font-bold text-white outline-none focus:border-accent text-sm sm:text-base"
                     />
                     <button
@@ -440,7 +462,11 @@ export const WorkoutLoggerAdvanced = () => {
         </button>
 
         {/* Waiver Modal */}
-        <WaiverModal isOpen={showWaiverModal} onClose={() => setShowWaiverModal(false)} />
+        <WaiverModal
+          isOpen={showWaiverModal}
+          onClose={() => setShowWaiverModal(false)}
+          onAccept={() => performWorkoutLog()}
+        />
       </div>
     </>
   );

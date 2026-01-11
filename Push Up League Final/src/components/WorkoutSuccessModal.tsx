@@ -5,6 +5,7 @@ import { useEnhancedStore } from '@/lib/enhancedStore';
 
 interface WorkoutSuccessModalProps {
   onClose: () => void;
+  onLogAnother?: () => void;
   pushups: number;
   xpEarned: number;
   coinsEarned: number;
@@ -14,6 +15,7 @@ interface WorkoutSuccessModalProps {
 
 export const WorkoutSuccessModal = ({
   onClose,
+  onLogAnother,
   pushups,
   xpEarned,
   coinsEarned,
@@ -149,13 +151,26 @@ export const WorkoutSuccessModal = ({
             </div>
           )}
 
-          {/* Continue Button */}
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-accent to-electric-blue text-dark font-bold rounded-lg hover:shadow-lg hover:shadow-accent/50 transition uppercase tracking-wider font-display"
-          >
-            Continue
-          </button>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            {onLogAnother && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onLogAnother();
+                }}
+                className="w-full py-3 bg-gradient-to-r from-accent to-electric-blue text-dark font-bold rounded-lg hover:shadow-lg hover:shadow-accent/50 transition uppercase tracking-wider font-display"
+              >
+                Log Another Workout
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className={`w-full py-3 ${onLogAnother ? 'glass-light border border-dark-border text-white' : 'bg-gradient-to-r from-accent to-electric-blue text-dark'} font-bold rounded-lg hover:shadow-lg transition uppercase tracking-wider font-display`}
+            >
+              Continue
+            </button>
+          </div>
         </div>
       </div>
     </div>

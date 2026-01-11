@@ -8,9 +8,10 @@ import { WAIVER_VERSION, WAIVER_LAST_UPDATED } from '@/lib/waiverConstants';
 interface WaiverModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAccept?: () => void;
 }
 
-export const WaiverModal = ({ isOpen, onClose }: WaiverModalProps) => {
+export const WaiverModal = ({ isOpen, onClose, onAccept }: WaiverModalProps) => {
   const [accepted, setAccepted] = useState(false);
   const [signatureName, setSignatureName] = useState('');
   const acceptWaiver = useEnhancedStore((state) => state.acceptWaiver);
@@ -22,6 +23,10 @@ export const WaiverModal = ({ isOpen, onClose }: WaiverModalProps) => {
     if (accepted && signatureName.trim().length >= 2) {
       acceptWaiver(signatureName.trim(), WAIVER_VERSION);
       onClose();
+      // Call the onAccept callback if provided (to proceed with workout)
+      if (onAccept) {
+        onAccept();
+      }
     }
   };
 
