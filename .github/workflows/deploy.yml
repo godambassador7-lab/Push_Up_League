@@ -1,9 +1,11 @@
-name: Deploy to GitHub Pages
+name: Deploy Static Site to GitHub Pages
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'Push Up League Final/docs/**'
   workflow_dispatch:
 
 permissions:
