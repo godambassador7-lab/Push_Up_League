@@ -535,6 +535,16 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     // Update daily goal
     get().updateDailyGoal();
 
+    // Trigger immediate sync to Firebase if authenticated
+    if (state.isAuthenticated) {
+      // Import syncManager dynamically to avoid circular dependency
+      import('./syncManager').then(({ syncManager }) => {
+        syncManager.forceSyncNow().catch(err => {
+          console.error('Failed to sync workout to Firebase:', err);
+        });
+      });
+    }
+
     let successMessage = integrityCheck.isWorldRecordTerritory
       ? '⚠️ World Record Territory! Guinness World Records has been notified.'
       : 'Workout logged successfully!';
