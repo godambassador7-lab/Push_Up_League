@@ -104,6 +104,13 @@ export class SyncManager {
         console.log('✅ Profile loaded from Firebase:', profile);
         console.log(`☁️ Firebase has: ${profile.totalXp} XP, streak ${profile.currentStreak}`);
 
+        // Fix userId mismatch if profile has old local UUID
+        if (profile.userId !== user.uid) {
+          console.warn(`⚠️ Fixing userId mismatch: profile has ${profile.userId}, auth has ${user.uid}`);
+          const { updateUserProfile } = await import('./firebase');
+          await updateUserProfile(user.uid, { userId: user.uid });
+        }
+
         // Update local store with Firebase data
         store.setUserProfile(profile.email, profile.proficiency as any, profile.maxPushupsInOneSet);
 
@@ -274,7 +281,7 @@ export class SyncManager {
       // Sync user profile with all fields
       console.log('📤 Uploading user profile to Firebase...');
       await updateUserProfile(store.userId, {
-        userId: store.userId,
+        userId: store.userId,  // This should match the document ID
         username: store.username,
         email: store.email,
         proficiency: store.proficiency,
