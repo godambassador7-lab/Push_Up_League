@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { calculateCalories, calculateWeeklyStats, calculateMultiSetCalories, lbsToKg, kgToLbs, getCalorieBurnMessage } from '@/lib/calorieCalculator';
 import { Flame, TrendingUp, Award, Settings as SettingsIcon, Info } from 'lucide-react';
@@ -13,6 +13,11 @@ export const CalorieDashboard = () => {
   const [tempWeight, setTempWeight] = useState(
     weightUnit === 'kg' ? bodyWeightKg : kgToLbs(bodyWeightKg)
   );
+
+  // Sync tempWeight with bodyWeightKg when it changes from the store
+  useEffect(() => {
+    setTempWeight(weightUnit === 'kg' ? bodyWeightKg : kgToLbs(bodyWeightKg));
+  }, [bodyWeightKg, weightUnit]);
 
   // Calculate today's calories
   const todayCalories = useMemo(() => {
