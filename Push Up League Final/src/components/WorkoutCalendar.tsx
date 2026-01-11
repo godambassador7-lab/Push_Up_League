@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { calculateCalories, calculateMultiSetCalories, DEFAULT_BODY_WEIGHT_KG } from '@/lib/calorieCalculator';
 import { getPushUpTypeData } from '@/lib/pushupTypes';
-import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target, Calendar as CalendarIcon } from 'lucide-react';
 
 export const WorkoutCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const workouts = useEnhancedStore((state) => state.workouts);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const lockDay = useEnhancedStore((state) => state.lockDay);
@@ -37,7 +38,42 @@ export const WorkoutCalendar = () => {
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
+  const previousWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setCurrentDate(newDate);
+  };
+
+  const nextWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setCurrentDate(newDate);
+  };
+
+  const getWeekDays = () => {
+    const startOfWeek = new Date(currentDate);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day;
+    startOfWeek.setDate(diff);
+
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(date.getDate() + i);
+      weekDays.push(date);
+    }
+    return weekDays;
+  };
+
   const getWorkoutForDate = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return workouts.find(w => w.date === dateStr);
+  };
+
+  const getWorkoutForFullDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return workouts.find(w => w.date === dateStr);
   };
@@ -102,34 +138,67 @@ export const WorkoutCalendar = () => {
     calendarCells.push(day);
   }
 
-  return (
-    <div className="glass glass-border rounded-lg p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="font-display text-2xl font-bold text-white">
-            {monthNames[month]} {year}
-          </div>
-          <div className="text-sm text-gray-400 mt-1">
-            Track and lock your daily push-ups
-          </div>
-        </div>
+  const weekDays = viewMode === 'week' ? getWeekDays() : [];
 
-        <div className="flex gap-2">
-          <button
-            onClick={previousMonth}
-            className="p-2 glass-light rounded-lg hover:bg-accent/20 transition"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={nextMonth}
-            className="p-2 glass-light rounded-lg hover:bg-accent/20 transition"
-          >
-            <ChevronRight size={20} />
-          </button>
+  return (
+    <div className="w-full max-w-full">
+      <div className="glass glass-border rounded-lg p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <div className="font-display text-2xl font-bold text-white">
+              {viewMode === 'month'
+                ? `${monthNames[month]} ${year}`
+                : `Week of ${monthNames[weekDays[0]?.getMonth()]} ${weekDays[0]?.getDate()}, ${weekDays[0]?.getFullYear()}`
+              }
+            </div>
+            <div className="text-sm text-gray-400 mt-1">
+              Track and lock your daily push-ups
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* View Toggle */}
+            <div className="flex gap-1 glass-light rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('month')}
+                className={`px-3 py-1.5 rounded text-xs font-bold transition ${
+                  viewMode === 'month'
+                    ? 'bg-accent text-dark'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Month
+              </button>
+              <button
+                onClick={() => setViewMode('week')}
+                className={`px-3 py-1.5 rounded text-xs font-bold transition ${
+                  viewMode === 'week'
+                    ? 'bg-accent text-dark'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Week
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-2">
+              <button
+                onClick={viewMode === 'month' ? previousMonth : previousWeek}
+                className="p-2 glass-light rounded-lg hover:bg-accent/20 transition"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={viewMode === 'month' ? nextMonth : nextWeek}
+                className="p-2 glass-light rounded-lg hover:bg-accent/20 transition"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Day names */}
       <div className="grid grid-cols-7 gap-2 mb-2">
@@ -140,9 +209,10 @@ export const WorkoutCalendar = () => {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2">
-        {calendarCells.map((day, index) => {
+      {/* Month View */}
+      {viewMode === 'month' && (
+        <div className="grid grid-cols-7 gap-2">
+          {calendarCells.map((day, index) => {
           if (day === null) {
             return <div key={`empty-${index}`} className="aspect-square" />;
           }
@@ -239,7 +309,120 @@ export const WorkoutCalendar = () => {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
+
+      {/* Week View */}
+      {viewMode === 'week' && (
+        <div className="grid grid-cols-7 gap-3 sm:gap-4">
+          {weekDays.map((date, index) => {
+            const workout = getWorkoutForFullDate(date);
+            const dateKey = date.toISOString().split('T')[0];
+            const isToday = today.toDateString() === date.toDateString();
+            const isFuture = date > today;
+            const hasWorkout = !!workout;
+            const isLocked = workout?.isLocked || false;
+            const metGoal = workout && workout.pushups >= dailyGoal;
+            const isExpanded = expandedDay === date.getDate();
+            const caloriesBurned = workout ? getWorkoutCalories(workout) : 0;
+            const breakdown = workout ? getWorkoutBreakdown(workout) : [];
+
+            return (
+              <div
+                key={dateKey}
+                className={`relative rounded-lg transition min-h-[200px] sm:min-h-[240px] ${
+                  isToday
+                    ? 'glass-border ring-2 ring-accent'
+                    : hasWorkout
+                    ? 'glass glass-border'
+                    : 'glass-light border border-dark-border'
+                } ${isFuture ? 'opacity-50' : ''} ${isExpanded ? 'z-20' : ''}`}
+              >
+                {/* Day header */}
+                <div className="p-3 border-b border-dark-border">
+                  <div className="text-xs text-gray-500 uppercase">{dayNames[index]}</div>
+                  <div className={`text-lg font-bold mt-1 ${isToday ? 'text-accent' : 'text-white'}`}>
+                    {date.getDate()}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {monthNames[date.getMonth()]}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-3">
+                  {hasWorkout ? (
+                    <div className="space-y-3">
+                      {/* Total pushups */}
+                      <div className="glass-light rounded-lg p-3">
+                        <div className="text-xs text-gray-400 mb-1">Total Reps</div>
+                        <div className="text-2xl font-black text-accent">{workout.pushups}</div>
+                      </div>
+
+                      {/* Calories */}
+                      <div className="glass-light rounded-lg p-3">
+                        <div className="text-xs text-gray-400 mb-1">Calories</div>
+                        <div className="text-lg font-bold text-warning">{caloriesBurned.toFixed(1)}</div>
+                      </div>
+
+                      {/* Breakdown */}
+                      {breakdown.length > 0 && (
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2">Variations</div>
+                          <div className="space-y-1.5">
+                            {breakdown.slice(0, 3).map((item) => (
+                              <div key={item.type} className="flex justify-between items-center text-xs">
+                                <span className="text-gray-300 truncate">{item.label}</span>
+                                <span className="text-accent font-bold ml-2">{item.reps}</span>
+                              </div>
+                            ))}
+                            {breakdown.length > 3 && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                +{breakdown.length - 3} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Status indicators */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-dark-border">
+                        {metGoal && (
+                          <div className="flex items-center gap-1 text-xs text-success">
+                            <Target size={12} />
+                            <span>Goal Met</span>
+                          </div>
+                        )}
+                        {isLocked && (
+                          <div className="flex items-center gap-1 text-xs text-warning">
+                            <Lock size={12} />
+                            <span>Locked</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Lock button */}
+                      {!isLocked && !isFuture && (
+                        <button
+                          onClick={() => lockDay(dateKey)}
+                          className="w-full mt-2 px-3 py-2 glass-light border border-accent/30 rounded-lg hover:bg-accent/10 transition text-accent text-xs font-bold"
+                        >
+                          Lock Day
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                      <CalendarIcon size={32} className="mb-2 opacity-50" />
+                      <div className="text-xs">No workout</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="mt-6 pt-4 border-t border-dark-border grid grid-cols-2 gap-4 text-xs">
@@ -268,6 +451,7 @@ export const WorkoutCalendar = () => {
         <div className="text-xs text-gray-500 mt-2">
           Lock a day to prevent further edits and maintain integrity
         </div>
+      </div>
       </div>
     </div>
   );

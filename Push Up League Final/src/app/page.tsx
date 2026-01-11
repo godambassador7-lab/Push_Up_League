@@ -19,14 +19,15 @@ import { Login } from '@/components/Login';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { RANK_LADDER } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
-import { Calendar, Trophy, Target, TrendingUp, Award, Zap } from 'lucide-react';
+import { Calendar, Trophy, Target, TrendingUp, Award, Zap, BarChart3 } from 'lucide-react';
 import { AchievementsPage } from '@/components/AchievementsPage';
+import { AnalyticsPage } from '@/components/AnalyticsPage';
 import { IronMode } from '@/components/IronMode';
 import { WorkoutTipPopup } from '@/components/WorkoutTipPopup';
 import { getTipForWorkout, WorkoutTip } from '@/lib/workoutTips';
 
 export default function Dashboard() {
-  const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'leaderboard' | 'achievements' | 'iron-mode'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'leaderboard' | 'achievements' | 'analytics' | 'iron-mode'>('dashboard');
   const [showAuthModal, setShowAuthModal] = useState<'login' | 'register' | null>(null);
   const [useAdvancedLogger, setUseAdvancedLogger] = useState(true);
   const [currentTip, setCurrentTip] = useState<WorkoutTip | null>(null);
@@ -174,6 +175,17 @@ export default function Dashboard() {
             >
               <Award size={16} className="sm:w-[18px] sm:h-[18px]" />
               Achievements
+            </button>
+            <button
+              onClick={() => setActiveView('analytics')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-display font-bold transition whitespace-nowrap text-sm sm:text-base active:scale-95 ${
+                activeView === 'analytics'
+                  ? 'bg-accent text-dark'
+                  : 'glass-light text-gray-400 hover:text-white'
+              }`}
+            >
+              <BarChart3 size={16} className="sm:w-[18px] sm:h-[18px]" />
+              Analytics
             </button>
             <button
               onClick={() => setActiveView('iron-mode')}
@@ -332,9 +344,9 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* Calendar View */}
+      {/* Calendar View - Full Width */}
       {activeView === 'calendar' && (
-        <section className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 md:py-12">
+        <section className="w-full px-3 sm:px-6 py-6 sm:py-8 md:py-12">
           <WorkoutCalendar />
         </section>
       )}
@@ -351,6 +363,11 @@ export default function Dashboard() {
         <section className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 md:py-12">
           <AchievementsPage />
         </section>
+      )}
+
+      {/* Analytics View */}
+      {activeView === 'analytics' && (
+        <AnalyticsPage />
       )}
 
       {/* Iron Mode View */}
