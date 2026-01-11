@@ -41,6 +41,10 @@ export class SyncManager {
    * Initialize sync manager and set up auth listener
    */
   initialize() {
+    // Load data from localStorage first (before Firebase auth resolves)
+    this.loadFromLocalStorage();
+    console.log('📦 Loaded data from localStorage');
+
     // Listen for auth state changes
     onAuthChange((user) => {
       if (user) {
