@@ -32,8 +32,31 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
         return;
       }
 
-      // Update local store
-      await login(email, password);
+      // Check if user profile exists, create if not
+      const userProfile = await getUserProfile(result.user.uid);
+
+      if (!userProfile) {
+        console.log('📝 Creating new user profile for email login...');
+        await createUserProfile(result.user.uid, {
+          username: result.user.email?.split('@')[0] || 'User',
+          email: result.user.email || email,
+          proficiency: 'beginner',
+          maxPushupsInOneSet: 0,
+          isWorldRecordCandidate: false,
+          totalXp: 0,
+          coins: 0,
+          currentRank: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          lastWorkoutDate: null,
+          personalBest: 0,
+          dailyGoal: 10,
+          streakFreezes: 0,
+        });
+      }
+
+      // Update local store with Firebase UID
+      await login(email, password, result.user.uid);
 
       // Wait for sync manager to finish loading all data from Firebase
       // The onAuthChange listener in syncManager will trigger automatically
@@ -89,8 +112,8 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
           });
         }
 
-        // Update local store to authenticated state
-        await login(result.user.email || '', '');
+        // Update local store to authenticated state with Firebase UID
+        await login(result.user.email || '', '', result.user.uid);
 
         // Wait for sync manager to finish loading all data from Firebase
         console.log('⏳ Waiting for Firebase data to load...');

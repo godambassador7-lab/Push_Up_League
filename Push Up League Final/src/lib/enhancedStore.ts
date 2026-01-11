@@ -137,7 +137,7 @@ export interface UserState {
   // Actions
   setUsername: (name: string) => void;
   setUserProfile: (email: string, proficiency: ProficiencyLevel, maxPushups: number) => void;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, firebaseUid?: string) => Promise<boolean>;
   register: (email: string, username: string, proficiency: ProficiencyLevel, maxPushups: number) => void;
   logout: () => void;
   acceptWaiver: (signatureName: string, version: string) => void;
@@ -281,10 +281,15 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     get().updateDailyGoal();
   },
 
-  login: async (email: string, password: string) => {
-    // Placeholder for Firebase integration
-    // For now, just set authenticated
-    set({ isAuthenticated: true, email });
+  login: async (email: string, password: string, firebaseUid?: string) => {
+    // Set authenticated state
+    // If firebaseUid is provided, use it; otherwise keep existing userId
+    const updates: any = { isAuthenticated: true, email };
+    if (firebaseUid) {
+      updates.userId = firebaseUid;
+      console.log('✅ Store userId set to Firebase UID:', firebaseUid);
+    }
+    set(updates);
     return true;
   },
 

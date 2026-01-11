@@ -175,7 +175,20 @@ export const getUserProfile = async (userId: string): Promise<FirestoreUser | nu
 export const updateUserProfile = async (userId: string, updates: Partial<FirestoreUser>) => {
   try {
     const docRef = doc(db, 'users', userId);
-    await updateDoc(docRef, updates);
+
+    // Try updateDoc first
+    try {
+      await updateDoc(docRef, updates);
+    } catch (updateError: any) {
+      // If document doesn't exist, create it with setDoc and merge
+      if (updateError.code === 'not-found') {
+        console.log('Document not found, creating with setDoc...');
+        await setDoc(docRef, updates, { merge: true });
+      } else {
+        throw updateError;
+      }
+    }
+
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
