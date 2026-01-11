@@ -281,7 +281,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Streak Card */}
               <div className="glass glass-border rounded-xl p-6">
-                <div className="text-xs text-gray-400 uppercase tracking-wider font-display mb-4">Streak</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-display mb-4 text-center">Streak</div>
                 <div className="flex flex-col items-center gap-3">
                   <div className="text-5xl font-black text-hero text-accent text-shadow-glow">{currentStreak}</div>
                   <div className="text-sm text-gray-400">BEST {longestStreak}</div>
