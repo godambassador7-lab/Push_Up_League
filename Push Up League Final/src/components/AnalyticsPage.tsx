@@ -20,6 +20,9 @@ interface VariationData {
   trend: 'up' | 'down' | 'stable';
 }
 
+// Convert PUSHUP_TYPES object to array of keys (outside component to avoid re-creation)
+const pushupTypes = Object.keys(PUSHUP_TYPES) as PushUpType[];
+
 export const AnalyticsPage = () => {
   const workouts = useEnhancedStore((state) => state.workouts);
   const variationStats = useEnhancedStore((state) => state.variationStats);
@@ -49,7 +52,7 @@ export const AnalyticsPage = () => {
     const variationDataMap = new Map<PushUpType, DataPoint[]>();
 
     // Initialize all variation types
-    PUSHUP_TYPES.forEach(type => {
+    pushupTypes.forEach(type => {
       variationDataMap.set(type, []);
     });
 
@@ -88,7 +91,7 @@ export const AnalyticsPage = () => {
         day: 'numeric'
       });
 
-      PUSHUP_TYPES.forEach(type => {
+      pushupTypes.forEach(type => {
         const reps = dayData.get(type) || 0;
         if (reps > 0) {
           variationDataMap.get(type)!.push({
@@ -101,7 +104,7 @@ export const AnalyticsPage = () => {
     });
 
     // Calculate statistics for each variation
-    const variations: VariationData[] = PUSHUP_TYPES.map(type => {
+    const variations: VariationData[] = pushupTypes.map(type => {
       const data = variationDataMap.get(type)!;
       const total = data.reduce((sum, d) => sum + d.value, 0);
       const average = data.length > 0 ? Math.round(total / data.length) : 0;
