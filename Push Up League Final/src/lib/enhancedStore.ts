@@ -847,15 +847,17 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
   setBodyWeight: (weightKg: number) => {
     const state = get();
-    set({ bodyWeightKg: Math.max(40, Math.min(200, weightKg)) });
+    const clampedWeight = Math.max(40, Math.min(200, weightKg));
+    set({ bodyWeightKg: clampedWeight });
 
-    // Trigger immediate sync to Firebase if authenticated
-    if (state.isAuthenticated) {
-      import('./syncManager').then(({ syncManager }) => {
+    import('./syncManager').then(({ syncManager }) => {
+      if (state.isAuthenticated) {
         syncManager.forceSyncNow().catch(err => {
           console.error('Failed to sync body weight to Firebase:', err);
         });
-      });
-    }
+      } else {
+        syncManager.saveToLocalStorage();
+      }
+    });
   },
 }));
