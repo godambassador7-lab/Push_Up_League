@@ -142,6 +142,7 @@ export class SyncManager {
           personalBest: profile.personalBest,
           dailyGoal: profile.dailyGoal,
           streakFreezes: profile.streakFreezes,
+          bodyWeightKg: profile.bodyWeightKg || 77,
         });
       } else {
         // No profile in Firebase - create one with local data
@@ -164,6 +165,7 @@ export class SyncManager {
           personalBest: store.personalBest,
           dailyGoal: store.dailyGoal,
           streakFreezes: store.streakFreezes,
+          bodyWeightKg: store.bodyWeightKg,
         });
 
         // Set userId to Firebase UID

@@ -114,6 +114,7 @@ export interface FirestoreUser {
   personalBest: number;
   dailyGoal: number;
   streakFreezes: number;
+  bodyWeightKg?: number;
   waiverAccepted?: boolean;
   waiverAcceptedAt?: string | null;
   waiverVersion?: string | null;
