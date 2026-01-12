@@ -120,8 +120,20 @@ export const PushUpLeaderboard = () => {
     };
 
     if (isWorldRecordCandidate) {
-      // Add to world record leaderboard
-      const updatedLeaders = [...worldRecordLeaders, currentUser]
+      // Check if user already exists in world record leaderboard
+      const existingIndex = worldRecordLeaders.findIndex(e => e.userId === userId);
+      let leadersList = [...worldRecordLeaders];
+
+      if (existingIndex >= 0) {
+        // Update existing entry with latest data
+        leadersList[existingIndex] = currentUser;
+      } else {
+        // Add new entry
+        leadersList.push(currentUser);
+      }
+
+      // Sort and re-rank all users
+      const updatedLeaders = leadersList
         .sort((a, b) => b.totalPushups - a.totalPushups)
         .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
@@ -130,8 +142,20 @@ export const PushUpLeaderboard = () => {
       const myRank = updatedLeaders.findIndex(e => e.userId === userId) + 1;
       setUserRank(myRank);
     } else {
-      // Add to standard leaderboard
-      const updatedLeaders = [...pushUpLeaders, currentUser]
+      // Check if user already exists in standard leaderboard
+      const existingIndex = pushUpLeaders.findIndex(e => e.userId === userId);
+      let leadersList = [...pushUpLeaders];
+
+      if (existingIndex >= 0) {
+        // Update existing entry with latest data
+        leadersList[existingIndex] = currentUser;
+      } else {
+        // Add new entry
+        leadersList.push(currentUser);
+      }
+
+      // Sort and re-rank all users
+      const updatedLeaders = leadersList
         .sort((a, b) => b.totalPushups - a.totalPushups)
         .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
