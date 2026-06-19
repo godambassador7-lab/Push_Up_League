@@ -1,6 +1,7 @@
 ﻿/** @type {import('next').NextConfig} */
 const isProd = process.env.NODE_ENV === 'production';
-const basePath = isProd ? (process.env.NEXT_PUBLIC_BASE_PATH || '') : '';
+const isVercel = Boolean(process.env.VERCEL);
+const basePath = isProd && !isVercel ? (process.env.NEXT_PUBLIC_BASE_PATH || '') : '';
 
 const nextConfig = {
   reactStrictMode: true,

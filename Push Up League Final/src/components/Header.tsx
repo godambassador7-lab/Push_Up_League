@@ -11,7 +11,7 @@ import { StreakFlame } from './StreakFlame';
 
 export const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
-  const basePath = process.env.NODE_ENV === 'production'
+  const basePath = process.env.NODE_ENV === 'production' && !process.env.VERCEL
     ? (process.env.NEXT_PUBLIC_BASE_PATH || '')
     : '';
   const logoSrc = `${basePath}/logo.png`;

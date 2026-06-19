@@ -8,7 +8,7 @@ interface LoadingScreenProps {
 
 export const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
   const [progress, setProgress] = useState(0);
-  const basePath = process.env.NODE_ENV === 'production'
+  const basePath = process.env.NODE_ENV === 'production' && !process.env.VERCEL
     ? (process.env.NEXT_PUBLIC_BASE_PATH || '')
     : '';
   const logoSrc = `${basePath}/logo.png`;

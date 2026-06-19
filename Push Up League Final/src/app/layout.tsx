@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '@/globals.css';
 import { AppWrapper } from '@/components/AppWrapper';
 
-const basePath = process.env.NODE_ENV === 'production'
+const basePath = process.env.NODE_ENV === 'production' && !process.env.VERCEL
   ? (process.env.NEXT_PUBLIC_BASE_PATH || '')
   : '';
 const icon32 = `${basePath}/Push Up League Logo 32.png`;
