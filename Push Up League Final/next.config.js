@@ -9,6 +9,9 @@ const nextConfig = {
   ...(isProd ? { output: 'export' } : {}),
   basePath,
   assetPrefix: isProd && basePath ? basePath : undefined,
+  env: {
+    NEXT_PUBLIC_RESOLVED_BASE_PATH: basePath,
+  },
   trailingSlash: true,
   images: {
     unoptimized: true,

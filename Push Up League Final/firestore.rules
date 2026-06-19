@@ -43,7 +43,16 @@ service cloud.firestore {
     match /leaderboardProfiles/{userId} {
       allow read: if true;
       allow create, update: if isOwner(userId)
-        && request.resource.data.userId == userId;
+        && request.resource.data.userId == userId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'username',
+          'normalizedUsername',
+          'totalXp',
+          'currentStreak',
+          'currentRank',
+          'isWorldRecordCandidate'
+        ]);
       allow delete: if false;
     }
 

@@ -150,13 +150,16 @@ export class SyncManager {
         });
 
         // Backfill the privacy-safe leaderboard projection for existing users.
-        await updateUserProfile(user.uid, {
+        const backfillResult = await updateUserProfile(user.uid, {
           username: profile.username,
           totalXp: profile.totalXp,
           currentStreak: profile.currentStreak,
           currentRank: profile.currentRank,
           isWorldRecordCandidate: profile.isWorldRecordCandidate,
         });
+        if (!backfillResult.success) {
+          console.warn('Leaderboard profile backfill failed:', backfillResult.error);
+        }
       } else {
         // No profile in Firebase - create one with local data
         console.warn('⚠️ No profile found in Firebase for user:', user.uid);

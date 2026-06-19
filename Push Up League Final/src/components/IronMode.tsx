@@ -7,6 +7,7 @@ import { IronModeSummary } from './IronModeSummary';
 import { IronSession } from '@/lib/ironMode';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { WorkoutSet } from '@/lib/enhancedStore';
+import { PUSHUP_TYPES, PushUpType } from '@/lib/pushupTypes';
 
 type IronModeScreen = 'setup' | 'session' | 'summary';
 
@@ -32,11 +33,25 @@ export const IronMode = ({ onExit }: IronModeProps) => {
 
     // Save to store
     if (session.endedAt && session.xpEarned) {
-      const workoutSets: WorkoutSet[] = session.sets.map((set) => ({
-        reps: set.actualReps,
-        type: 'standard',
-        restAfter: set.restAfter,
-      }));
+      const workoutSets: WorkoutSet[] = session.sets.map((set) => {
+        const normalizedVariation = set.variation
+          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-');
+        const candidate = normalizedVariation === 'incline'
+          ? 'high-incline'
+          : normalizedVariation;
+        const type = candidate in PUSHUP_TYPES
+          ? candidate as PushUpType
+          : 'standard';
+
+        return {
+          reps: set.actualReps,
+          type,
+          restAfter: set.restAfter,
+        };
+      });
 
       addWorkout(session.totalReps, workoutSets, false, Math.round(session.totalTime / 60));
     }

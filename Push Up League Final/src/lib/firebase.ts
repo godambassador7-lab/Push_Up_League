@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot, Timestamp, writeBatch } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
@@ -179,18 +179,18 @@ const getLeaderboardProfileUpdates = (
 // Create user profile in Firestore
 export const createUserProfile = async (userId: string, userData: Partial<FirestoreUser>) => {
   try {
-    await Promise.all([
-      setDoc(doc(db, 'users', userId), {
-        userId,
-        ...userData,
-        accountCreatedAt: new Date().toISOString(),
-      }),
-      setDoc(
-        doc(db, 'leaderboardProfiles', userId),
-        getLeaderboardProfileUpdates(userId, userData),
-        { merge: true }
-      ),
-    ]);
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'users', userId), {
+      userId,
+      ...userData,
+      accountCreatedAt: new Date().toISOString(),
+    });
+    batch.set(
+      doc(db, 'leaderboardProfiles', userId),
+      getLeaderboardProfileUpdates(userId, userData),
+      { merge: true }
+    );
+    await batch.commit();
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -216,26 +216,14 @@ export const getUserProfile = async (userId: string): Promise<FirestoreUser | nu
 // Update user profile
 export const updateUserProfile = async (userId: string, updates: Partial<FirestoreUser>) => {
   try {
-    const docRef = doc(db, 'users', userId);
-
-    // Try updateDoc first
-    try {
-      await updateDoc(docRef, updates);
-    } catch (updateError: any) {
-      // If document doesn't exist, create it with setDoc and merge
-      if (updateError.code === 'not-found') {
-        console.log('Document not found, creating with setDoc...');
-        await setDoc(docRef, updates, { merge: true });
-      } else {
-        throw updateError;
-      }
-    }
-
-    await setDoc(
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'users', userId), updates, { merge: true });
+    batch.set(
       doc(db, 'leaderboardProfiles', userId),
       getLeaderboardProfileUpdates(userId, updates),
       { merge: true }
     );
+    await batch.commit();
 
     return { success: true };
   } catch (error: any) {
@@ -348,6 +336,7 @@ export const getStandardLeaderboard = async (limitCount: number = 50) => {
       const data = doc.data();
       leaders.push({
         rank: leaders.length + 1,
+        userId: data.userId ?? doc.id,
         username: data.username,
         totalXp: data.totalXp,
         currentStreak: data.currentStreak,
@@ -379,6 +368,7 @@ export const getWorldRecordLeaderboard = async (limitCount: number = 50) => {
       const data = doc.data();
       leaders.push({
         rank: leaders.length + 1,
+        userId: data.userId ?? doc.id,
         username: data.username,
         totalXp: data.totalXp,
         currentStreak: data.currentStreak,

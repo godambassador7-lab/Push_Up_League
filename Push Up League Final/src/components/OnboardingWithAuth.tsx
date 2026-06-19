@@ -472,7 +472,7 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
                     <div className="text-sm text-gray-300">
                       You've indicated world-class performance levels. You will be placed in the
                       <span className="font-bold text-accent"> World Record Leaders </span>
-                      leaderboard with exponentially challenging goals.
+                      leaderboard with harder goals.
                     </div>
                     <div className="text-xs text-gray-400 mt-2">
                       Note: Exceptional performance may require independent verification before it

@@ -44,6 +44,7 @@
     "public",
     "docs",
     "_next",
+    // Optional bridge to a private core checkout that is not part of this repository.
     "src/lib/_core_imports.ts"
   ]
 }
