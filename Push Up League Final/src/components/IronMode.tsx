@@ -6,6 +6,7 @@ import { IronModeSession } from './IronModeSession';
 import { IronModeSummary } from './IronModeSummary';
 import { IronSession } from '@/lib/ironMode';
 import { useEnhancedStore } from '@/lib/enhancedStore';
+import { WorkoutSet } from '@/lib/enhancedStore';
 
 type IronModeScreen = 'setup' | 'session' | 'summary';
 
@@ -20,7 +21,6 @@ export const IronMode = ({ onExit }: IronModeProps) => {
 
   const userId = useEnhancedStore((state) => state.userId);
   const addWorkout = useEnhancedStore((state) => state.logWorkout);
-  const addXP = useEnhancedStore((state) => state.addXP);
 
   const handleStartSession = (config: SessionConfig) => {
     setSessionConfig(config);
@@ -32,11 +32,13 @@ export const IronMode = ({ onExit }: IronModeProps) => {
 
     // Save to store
     if (session.endedAt && session.xpEarned) {
-      // Log as workout
-      addWorkout(session.totalReps, session.sets);
+      const workoutSets: WorkoutSet[] = session.sets.map((set) => ({
+        reps: set.actualReps,
+        type: 'standard',
+        restAfter: set.restAfter,
+      }));
 
-      // Award XP
-      addXP(session.xpEarned);
+      addWorkout(session.totalReps, workoutSets, false, Math.round(session.totalTime / 60));
     }
 
     // Save session to localStorage history

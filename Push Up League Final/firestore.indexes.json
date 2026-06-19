@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "workouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "leaderboardProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isWorldRecordCandidate", "order": "ASCENDING" },
+        { "fieldPath": "totalXp", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

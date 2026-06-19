@@ -1,6 +1,6 @@
 'use client';
 
-import { IronSession, calculateSessionXP, getTrackById } from '@/lib/ironMode';
+import { IronSession, Track, calculateSessionXP, getTrackById } from '@/lib/ironMode';
 import { Trophy, Clock, Zap, TrendingUp, Music, ExternalLink } from 'lucide-react';
 
 interface IronModeSummaryProps {
@@ -22,7 +22,7 @@ export const IronModeSummary = ({ session, onClose }: IronModeSummaryProps) => {
   const uniqueTracks = new Set(session.music.tracksPlayed);
   const tracksListened = Array.from(uniqueTracks)
     .map((id) => getTrackById(id))
-    .filter(Boolean);
+    .filter((track): track is Track => Boolean(track));
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

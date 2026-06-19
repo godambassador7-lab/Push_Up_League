@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, orderBy, limit, getDocs, onSnapshot, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
@@ -146,14 +146,51 @@ export interface FirestoreAchievement {
   type: string;
 }
 
+export interface FirestoreLeaderboardProfile {
+  userId: string;
+  username: string;
+  normalizedUsername: string;
+  totalXp: number;
+  currentStreak: number;
+  currentRank: number;
+  isWorldRecordCandidate: boolean;
+}
+
+const getLeaderboardProfileUpdates = (
+  userId: string,
+  userData: Partial<FirestoreUser>
+): Partial<FirestoreLeaderboardProfile> => {
+  const publicData: Partial<FirestoreLeaderboardProfile> = { userId };
+
+  if (userData.username !== undefined) {
+    publicData.username = userData.username;
+    publicData.normalizedUsername = userData.username.toLowerCase().trim();
+  }
+  if (userData.totalXp !== undefined) publicData.totalXp = userData.totalXp;
+  if (userData.currentStreak !== undefined) publicData.currentStreak = userData.currentStreak;
+  if (userData.currentRank !== undefined) publicData.currentRank = userData.currentRank;
+  if (userData.isWorldRecordCandidate !== undefined) {
+    publicData.isWorldRecordCandidate = userData.isWorldRecordCandidate;
+  }
+
+  return publicData;
+};
+
 // Create user profile in Firestore
 export const createUserProfile = async (userId: string, userData: Partial<FirestoreUser>) => {
   try {
-    await setDoc(doc(db, 'users', userId), {
-      userId,
-      ...userData,
-      accountCreatedAt: new Date().toISOString(),
-    });
+    await Promise.all([
+      setDoc(doc(db, 'users', userId), {
+        userId,
+        ...userData,
+        accountCreatedAt: new Date().toISOString(),
+      }),
+      setDoc(
+        doc(db, 'leaderboardProfiles', userId),
+        getLeaderboardProfileUpdates(userId, userData),
+        { merge: true }
+      ),
+    ]);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -194,6 +231,12 @@ export const updateUserProfile = async (userId: string, updates: Partial<Firesto
       }
     }
 
+    await setDoc(
+      doc(db, 'leaderboardProfiles', userId),
+      getLeaderboardProfileUpdates(userId, updates),
+      { merge: true }
+    );
+
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -218,21 +261,13 @@ export const getUserWorkouts = async (userId: string, limitCount: number = 100) 
   try {
     const q = query(
       collection(db, 'workouts'),
+      where('userId', '==', userId),
       orderBy('date', 'desc'),
       limit(limitCount)
     );
 
     const querySnapshot = await getDocs(q);
-    const workouts: FirestoreWorkout[] = [];
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as FirestoreWorkout;
-      if (data.userId === userId) {
-        workouts.push(data);
-      }
-    });
-
-    return workouts;
+    return querySnapshot.docs.map((doc) => doc.data() as FirestoreWorkout);
   } catch (error) {
     console.error('Error getting workouts:', error);
     return [];
@@ -243,19 +278,13 @@ export const getUserWorkouts = async (userId: string, limitCount: number = 100) 
 export const subscribeToUserWorkouts = (userId: string, callback: (workouts: FirestoreWorkout[]) => void) => {
   const q = query(
     collection(db, 'workouts'),
+    where('userId', '==', userId),
     orderBy('date', 'desc'),
     limit(100)
   );
 
   return onSnapshot(q, (snapshot) => {
-    const workouts: FirestoreWorkout[] = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data() as FirestoreWorkout;
-      if (data.userId === userId) {
-        workouts.push(data);
-      }
-    });
-    callback(workouts);
+    callback(snapshot.docs.map((doc) => doc.data() as FirestoreWorkout));
   });
 };
 
@@ -272,18 +301,12 @@ export const saveAchievement = async (achievement: FirestoreAchievement) => {
 // Get user achievements
 export const getUserAchievements = async (userId: string) => {
   try {
-    const q = query(collection(db, 'achievements'));
+    const q = query(
+      collection(db, 'achievements'),
+      where('userId', '==', userId)
+    );
     const querySnapshot = await getDocs(q);
-    const achievements: FirestoreAchievement[] = [];
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as FirestoreAchievement;
-      if (data.userId === userId) {
-        achievements.push(data);
-      }
-    });
-
-    return achievements;
+    return querySnapshot.docs.map((doc) => doc.data() as FirestoreAchievement);
   } catch (error) {
     console.error('Error getting achievements:', error);
     return [];
@@ -293,27 +316,18 @@ export const getUserAchievements = async (userId: string) => {
 // Check if username is already taken
 export const isUsernameTaken = async (username: string): Promise<boolean> => {
   try {
+    const normalizedUsername = username.toLowerCase().trim();
     const q = query(
-      collection(db, 'users'),
-      limit(1000) // Check all users (adjust if you have more than 1000 users)
+      collection(db, 'leaderboardProfiles'),
+      where('normalizedUsername', '==', normalizedUsername),
+      limit(1)
     );
 
     const querySnapshot = await getDocs(q);
-
-    // Case-insensitive username comparison
-    const normalizedUsername = username.toLowerCase().trim();
-
-    for (const doc of querySnapshot.docs) {
-      const data = doc.data();
-      if (data.username?.toLowerCase().trim() === normalizedUsername) {
-        return true; // Username is taken
-      }
-    }
-
-    return false; // Username is available
+    return !querySnapshot.empty;
   } catch (error) {
     console.error('Error checking username:', error);
-    return false; // On error, allow the username (fail open)
+    return true;
   }
 };
 
@@ -321,7 +335,8 @@ export const isUsernameTaken = async (username: string): Promise<boolean> => {
 export const getStandardLeaderboard = async (limitCount: number = 50) => {
   try {
     const q = query(
-      collection(db, 'users'),
+      collection(db, 'leaderboardProfiles'),
+      where('isWorldRecordCandidate', '==', false),
       orderBy('totalXp', 'desc'),
       limit(limitCount)
     );
@@ -331,15 +346,13 @@ export const getStandardLeaderboard = async (limitCount: number = 50) => {
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      if (!data.isWorldRecordCandidate) {
-        leaders.push({
-          rank: leaders.length + 1,
-          username: data.username,
-          totalXp: data.totalXp,
-          currentStreak: data.currentStreak,
-          currentRank: data.currentRank,
-        });
-      }
+      leaders.push({
+        rank: leaders.length + 1,
+        username: data.username,
+        totalXp: data.totalXp,
+        currentStreak: data.currentStreak,
+        currentRank: data.currentRank,
+      });
     });
 
     return leaders;
@@ -353,7 +366,8 @@ export const getStandardLeaderboard = async (limitCount: number = 50) => {
 export const getWorldRecordLeaderboard = async (limitCount: number = 50) => {
   try {
     const q = query(
-      collection(db, 'users'),
+      collection(db, 'leaderboardProfiles'),
+      where('isWorldRecordCandidate', '==', true),
       orderBy('totalXp', 'desc'),
       limit(limitCount)
     );
@@ -363,16 +377,14 @@ export const getWorldRecordLeaderboard = async (limitCount: number = 50) => {
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      if (data.isWorldRecordCandidate) {
-        leaders.push({
-          rank: leaders.length + 1,
-          username: data.username,
-          totalXp: data.totalXp,
-          currentStreak: data.currentStreak,
-          currentRank: data.currentRank,
-          isWorldRecord: true,
-        });
-      }
+      leaders.push({
+        rank: leaders.length + 1,
+        username: data.username,
+        totalXp: data.totalXp,
+        currentStreak: data.currentStreak,
+        currentRank: data.currentRank,
+        isWorldRecord: true,
+      });
     });
 
     return leaders;

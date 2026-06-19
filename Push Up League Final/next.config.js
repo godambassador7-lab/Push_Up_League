@@ -12,14 +12,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  eslint: {
-    // Skip linting during export builds to avoid missing eslint dependency in CI/Pages
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // Allow build to proceed even if stray TS files in /public fail type checks
-    ignoreBuildErrors: true,
-  },
   webpack: (config, { dev }) => {
     if (dev) {
       // Avoid eval-source-map strings that can choke on unexpected characters.

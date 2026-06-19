@@ -43,8 +43,9 @@ export const QuestsPanel = () => {
   };
 
   const QuestCard = ({ quest }: { quest: typeof quests[0] }) => {
-    const progress = getProgressPercent(quest.progress, quest.requirement);
-    const isCompleted = quest.progress >= quest.requirement;
+    const requirement = quest.requirement ?? quest.target;
+    const progress = getProgressPercent(quest.progress, requirement);
+    const isCompleted = quest.progress >= requirement;
     const isClaimed = quest.claimed;
 
     return (
@@ -74,7 +75,7 @@ export const QuestsPanel = () => {
         <div className="mb-3">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="text-gray-400">Progress</span>
-            <span className="text-white font-bold">{quest.progress} / {quest.requirement}</span>
+            <span className="text-white font-bold">{quest.progress} / {requirement}</span>
           </div>
           <div className="w-full h-2 glass-light rounded-full overflow-hidden">
             <div

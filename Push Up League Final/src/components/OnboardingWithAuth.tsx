@@ -82,7 +82,7 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
         if (userProfile) {
           // User already exists, just log them in
           const storeLogin = useEnhancedStore.getState().login;
-          await storeLogin(result.user.email || '', '');
+          await storeLogin(result.user.email || '', '', result.user.uid);
           setLoading(false);
           return;
         }
@@ -475,8 +475,8 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
                       leaderboard with exponentially challenging goals.
                     </div>
                     <div className="text-xs text-gray-400 mt-2">
-                      Note: Exceptional performance data may be submitted to Guinness World Records
-                      organization for verification.
+                      Note: Exceptional performance may require independent verification before it
+                      appears in record-level leaderboards.
                     </div>
                   </div>
                 </div>

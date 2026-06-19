@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
-import { calculateCalories, calculateMultiSetCalories, bodyWeightKg } from '@/lib/calorieCalculator';
-import { getPushUpTypeData } from '@/lib/pushupTypes';
+import { calculateCalories, calculateMultiSetCalories } from '@/lib/calorieCalculator';
+import { getPushUpTypeData, PushUpType } from '@/lib/pushupTypes';
 import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target, Calendar as CalendarIcon } from 'lucide-react';
 
 export const WorkoutCalendar = () => {
@@ -82,7 +82,7 @@ export const WorkoutCalendar = () => {
 
   const getWorkoutBreakdown = (workout: NonNullable<ReturnType<typeof getWorkoutForDate>>) => {
     if (workout.sets && workout.sets.length > 0) {
-      const grouped = new Map<string, { reps: number }>();
+      const grouped = new Map<PushUpType, { reps: number }>();
       workout.sets.forEach((set) => {
         const key = set.type;
         const current = grouped.get(key) || { reps: 0 };

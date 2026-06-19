@@ -26,7 +26,7 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
     try {
       const result = await loginUser(email, password);
 
-      if (!result.success) {
+      if (!result.success || !result.user) {
         setError(result.error || 'Login failed');
         setLoading(false);
         return;
@@ -36,7 +36,7 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
       const userProfile = await getUserProfile(result.user.uid);
 
       if (!userProfile) {
-        console.log('📝 Creating new user profile for email login...');
+        console.log('Creating new user profile for email login...');
 
         // Generate a unique username
         let baseUsername = result.user.email?.split('@')[0] || 'User';
@@ -74,14 +74,10 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
       // Wait for sync manager to finish loading all data from Firebase
       // The onAuthChange listener in syncManager will trigger automatically
       // and load profile, workouts, and achievements
-      console.log('⏳ Waiting for Firebase data to load...');
+      console.log('Waiting for Firebase data to load...');
       await syncManager.waitForLoginLoad();
 
       setLoading(false);
-
-      // Force page reload to ensure clean state with all data loaded
-      console.log('🔄 Reloading page with fresh data...');
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'An error occurred');
       setLoading(false);
@@ -141,15 +137,11 @@ export const Login = ({ onSwitchToRegister }: LoginProps) => {
         await login(result.user.email || '', '', result.user.uid);
 
         // Wait for sync manager to finish loading all data from Firebase
-        console.log('⏳ Waiting for Firebase data to load...');
+        console.log('Waiting for Firebase data to load...');
         await syncManager.waitForLoginLoad();
       }
 
       setLoading(false);
-
-      // Force page reload to ensure clean state with all data loaded
-      console.log('🔄 Reloading page with fresh data...');
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'An error occurred during Google sign-in');
       setLoading(false);

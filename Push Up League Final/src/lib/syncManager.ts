@@ -148,6 +148,15 @@ export class SyncManager {
           streakFreezes: profile.streakFreezes,
           bodyWeightKg: profile.bodyWeightKg || 77,
         });
+
+        // Backfill the privacy-safe leaderboard projection for existing users.
+        await updateUserProfile(user.uid, {
+          username: profile.username,
+          totalXp: profile.totalXp,
+          currentStreak: profile.currentStreak,
+          currentRank: profile.currentRank,
+          isWorldRecordCandidate: profile.isWorldRecordCandidate,
+        });
       } else {
         // No profile in Firebase - create one with local data
         console.warn('⚠️ No profile found in Firebase for user:', user.uid);

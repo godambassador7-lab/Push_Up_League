@@ -14,6 +14,7 @@ export interface Quest {
   description: string;
   objective: QuestObjective;
   target: number;
+  requirement?: number;
   progress: number;
   coinReward: number;
   xpReward: number;

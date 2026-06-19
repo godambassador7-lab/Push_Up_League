@@ -15,8 +15,8 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      // Anyone can read user profiles (for leaderboards)
-      allow read: if true;
+      // Full profiles contain private account fields and are owner-only.
+      allow read: if isOwner(userId);
 
       // Authenticated users can create/update their own profile
       allow create: if isOwner(userId);
@@ -28,31 +28,31 @@ service cloud.firestore {
 
     // Workouts collection
     match /workouts/{workoutId} {
-      // Anyone can read workouts (for leaderboards and stats)
-      allow read: if true;
+      // Workouts are private to the authenticated owner.
+      allow read: if isOwner(resource.data.userId);
 
-      // Both authenticated and guest users can create workouts
-      // Guests use anonymous IDs stored in localStorage
-      allow create: if true;
-
-      // Users can update their own workouts
-      // For authenticated users: check auth.uid
-      // For guests: trust the client (they can only access their own via client-side filtering)
-      allow update: if isAuthenticated()
-        ? resource.data.userId == request.auth.uid
-        : true;
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId;
 
       // Never allow deletion (workouts should be locked, not deleted)
       allow delete: if false;
     }
 
+    // Public, privacy-safe profile projection used by leaderboards.
+    match /leaderboardProfiles/{userId} {
+      allow read: if true;
+      allow create, update: if isOwner(userId)
+        && request.resource.data.userId == userId;
+      allow delete: if false;
+    }
+
     // Achievements collection
     match /achievements/{achievementId} {
-      // Anyone can read achievements
-      allow read: if true;
+      // Achievements are private to the authenticated owner.
+      allow read: if isOwner(resource.data.userId);
 
-      // Both authenticated and guest users can create achievements
-      allow create: if true;
+      allow create: if isOwner(request.resource.data.userId);
 
       // Never allow updates or deletions (achievements are permanent)
       allow update: if false;

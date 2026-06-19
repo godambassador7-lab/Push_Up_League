@@ -65,6 +65,8 @@ export interface PushUpTypeData {
   xpMultiplier: number;
   coinMultiplier: number;
   icon: string;
+  emoji?: string;
+  color?: string;
   category: 'regression' | 'base' | 'horizontal' | 'depth' | 'decline' | 'unilateral' | 'plyometric' | 'flow' | 'shoulder';
   primaryMuscles: string[];
   requiredEquipment?: string;
@@ -628,7 +630,12 @@ export const PUSHUP_TYPES: Record<PushUpType, PushUpTypeData> = {
 };
 
 export const getPushUpTypeData = (type: PushUpType): PushUpTypeData => {
-  return PUSHUP_TYPES[type];
+  const data = PUSHUP_TYPES[type];
+  return {
+    ...data,
+    emoji: data.emoji || data.icon,
+    color: data.color || '#f5c542',
+  };
 };
 
 export const getPushUpTypesByDifficulty = (difficulty: PushUpTypeData['difficulty']): PushUpTypeData[] => {

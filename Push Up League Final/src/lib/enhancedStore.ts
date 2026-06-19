@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { ProficiencyLevel, checkIntegrity, calculateDailyGoal, WORLD_RECORDS } from './worldRecords';
-import { PushUpType } from './pushupTypes';
+import { PUSHUP_TYPES, PushUpType } from './pushupTypes';
 import { ActivePowerUp, PowerUpType } from './powerUps';
 import { Quest } from './quests';
 import { getTodayBonus } from './dailyBonus';
+import { AchievementType, checkAchievements } from './achievements';
 
 export interface WorkoutSet {
   reps: number;
@@ -32,7 +33,7 @@ export interface Achievement {
   title: string;
   description: string;
   unlockedAt: string;
-  type: 'streak' | 'volume' | 'rank' | 'consistency' | 'variation' | 'comeback';
+  type: AchievementType;
   tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
 }
 
@@ -171,6 +172,11 @@ const getPowerUpPurchaseDefaults = () => ({
   goal_reducer: [],
 });
 
+const getVariationDefaults = (): Record<PushUpType, number> =>
+  Object.fromEntries(
+    Object.keys(PUSHUP_TYPES).map((type) => [type, 0])
+  ) as Record<PushUpType, number>;
+
 const getMissedDayPenalty = (missedDays: number) => {
   if (missedDays <= 0) {
     return { xpPenalty: 0, coinPenalty: 0 };
@@ -213,28 +219,10 @@ const getInitialState = () => ({
   powerUpPurchaseHistory: getPowerUpPurchaseDefaults(),
   quests: [],
   totalLifetimePushups: 0,
-  variationStats: {
-    standard: 0,
-    wide: 0,
-    diamond: 0,
-    decline: 0,
-    archer: 0,
-    pike: 0,
-    explosive: 0,
-    handstand: 0,
-  },
+  variationStats: getVariationDefaults(),
   dailyGoal: 50,
   personalBest: 0,
-  variationPBs: {
-    standard: 0,
-    wide: 0,
-    diamond: 0,
-    decline: 0,
-    archer: 0,
-    pike: 0,
-    explosive: 0,
-    handstand: 0,
-  },
+  variationPBs: getVariationDefaults(),
   bodyWeightKg: 77, // Default: 77kg (~170lbs)
 });
 
@@ -495,7 +483,6 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     const newPersonalBest = Math.max(state.personalBest, pushups);
 
     // Check achievements using comprehensive system
-    const { checkAchievements } = require('./achievements');
     const achievementCheckData = {
       totalLifetimePushups: state.totalLifetimePushups + pushups,
       currentStreak: newStreak,
@@ -551,7 +538,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     }
 
     let successMessage = integrityCheck.isWorldRecordTerritory
-      ? '⚠️ World Record Territory! Guinness World Records has been notified.'
+      ? 'World Record Territory: independent verification may be required.'
       : 'Workout logged successfully!';
 
     // Add daily bonus message if active
@@ -726,8 +713,6 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
   checkAndUnlockAchievements: () => {
     const state = get();
-    const { checkAchievements } = require('./achievements');
-
     const achievementCheckData = {
       currentStreak: state.currentStreak,
       longestStreak: state.longestStreak,

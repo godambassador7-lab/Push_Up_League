@@ -141,8 +141,8 @@ export default function FeaturesPage() {
               <div className="font-bold text-accent mb-1">4. World Record Territory</div>
               <div>
                 Athletes who claim world-class performance levels (200+ push-ups in one set or 10,000+ daily)
-                are placed in the World Record Leaders board with exponentially harder goals. Exceptional
-                performances may be submitted to Guinness World Records for verification.
+                are placed in the World Record Leaders board with harder goals. Exceptional performances may
+                require independent verification before appearing in record-level leaderboards.
               </div>
             </div>
 

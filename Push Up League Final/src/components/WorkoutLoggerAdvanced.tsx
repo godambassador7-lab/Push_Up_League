@@ -256,6 +256,7 @@ export const WorkoutLoggerAdvanced = () => {
               intermediate: 'text-blue-400 border-blue-400/50',
               advanced: 'text-purple-400 border-purple-400/50',
               elite: 'text-warning border-warning/50',
+              master: 'text-red-400 border-red-400/50',
             };
 
             const filteredTypes = getFilteredPushupTypes();
