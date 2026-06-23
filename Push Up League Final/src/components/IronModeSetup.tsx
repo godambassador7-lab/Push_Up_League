@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { SessionType, IRON_MODE_PLAYLISTS, getPlaylistTracks } from '@/lib/ironMode';
-import { Music, Zap, Trophy, Clock, TrendingUp, Target } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { SessionType, IRON_MODE_TRACKS } from '@/lib/ironMode';
+import { Check, Music, Pause, Play, Zap, Trophy, Clock, TrendingUp, Target } from 'lucide-react';
 import { useUserStore } from '@/lib/store';
 import { recommendNextSession, NextSession } from '@/lib/adaptiveEngine';
 import { getRecommendedTemplate, getTemplateById } from '@/lib/planTemplates';
 import { userToAdaptiveUser, getRecentSessionLogs } from '@/lib/adaptiveUtils';
 import { getTrainingPlan, getCurrentPlanDay, getTemplateForPlanDay, isWorkoutDay } from '@/lib/trainingPlans';
+import { PUSHUP_TYPES, PushUpType } from '@/lib/pushupTypes';
 import { PlanSelector } from './PlanSelector';
 
 interface IronModeSetupProps {
@@ -17,8 +18,10 @@ interface IronModeSetupProps {
 
 export interface SessionConfig {
   sessionType: SessionType;
+  variationMode: 'rotate' | 'manual';
+  variationIds: PushUpType[];
   musicEnabled: boolean;
-  playlistId?: string;
+  trackId?: string;
   loggingStyle: 'tap' | 'set';
   restTimer: boolean;
   restDuration: number; // seconds
@@ -27,11 +30,21 @@ export interface SessionConfig {
   adaptivePlan?: NextSession;
 }
 
+const ironModeTracks = Object.values(IRON_MODE_TRACKS);
+const pushUpTypes = Object.values(PUSHUP_TYPES);
+const PREVIEW_SECONDS = 30;
+
 export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) => {
   const user = useUserStore();
   const [sessionType, setSessionType] = useState<SessionType>('free');
+  const [variationMode, setVariationMode] = useState<'rotate' | 'manual'>('rotate');
+  const [variationIds, setVariationIds] = useState<PushUpType[]>(['standard', 'wide', 'diamond']);
   const [musicEnabled, setMusicEnabled] = useState(true);
-  const [playlistId, setPlaylistId] = useState('grind');
+  const [trackId, setTrackId] = useState(ironModeTracks[0]?.trackId ?? '');
+  const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewSeconds, setPreviewSeconds] = useState(0);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const [loggingStyle, setLoggingStyle] = useState<'tap' | 'set'>('set');
   const [restTimer, setRestTimer] = useState(true);
   const [restDuration, setRestDuration] = useState(90);
@@ -73,15 +86,93 @@ export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) 
     }
   }, [sessionType, user]);
 
+  useEffect(() => {
+    const audio = previewAudioRef.current;
+    return () => {
+      audio?.pause();
+    };
+  }, []);
+
+  const stopPreview = () => {
+    const audio = previewAudioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setPreviewTrackId(null);
+    setPreviewPlaying(false);
+    setPreviewSeconds(0);
+  };
+
+  const handlePreview = async (nextTrackId: string) => {
+    const audio = previewAudioRef.current;
+    const track = IRON_MODE_TRACKS[nextTrackId];
+    if (!audio || !track) return;
+
+    if (previewTrackId === nextTrackId && !audio.paused) {
+      audio.pause();
+      setPreviewPlaying(false);
+      return;
+    }
+
+    if (previewTrackId !== nextTrackId || audio.currentTime >= PREVIEW_SECONDS) {
+      audio.src = track.audioUrl;
+      audio.currentTime = 0;
+      setPreviewSeconds(0);
+      setPreviewTrackId(nextTrackId);
+    }
+
+    try {
+      await audio.play();
+      setPreviewPlaying(true);
+    } catch {
+      setPreviewPlaying(false);
+    }
+  };
+
+  const handlePreviewTimeUpdate = () => {
+    const audio = previewAudioRef.current;
+    if (!audio) return;
+
+    const elapsed = Math.min(audio.currentTime, PREVIEW_SECONDS);
+    setPreviewSeconds(elapsed);
+
+    if (audio.currentTime >= PREVIEW_SECONDS) {
+      audio.pause();
+      setPreviewPlaying(false);
+    }
+  };
+
+  const handleMusicToggle = () => {
+    if (musicEnabled) stopPreview();
+    setMusicEnabled((enabled) => !enabled);
+  };
+
   const handleStart = () => {
+    stopPreview();
     onStartSession({
       sessionType,
+      variationMode,
+      variationIds,
       musicEnabled,
-      playlistId: musicEnabled ? playlistId : undefined,
+      trackId: musicEnabled ? trackId : undefined,
       loggingStyle,
       restTimer,
       restDuration,
       adaptivePlan: sessionType === 'plan_day' && adaptivePlan ? adaptivePlan : undefined,
+    });
+  };
+
+  const handleCancel = () => {
+    stopPreview();
+    onCancel();
+  };
+
+  const toggleVariation = (variationId: PushUpType) => {
+    setVariationIds((selected) => {
+      if (!selected.includes(variationId)) return [...selected, variationId];
+      if (selected.length === 1) return selected;
+      return selected.filter((id) => id !== variationId);
     });
   };
 
@@ -118,16 +209,18 @@ export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) 
     },
   ];
 
-  const playlists = Object.values(IRON_MODE_PLAYLISTS);
-  const selectedPlaylist = playlistId ? IRON_MODE_PLAYLISTS[playlistId] : null;
-  const selectedTracks = selectedPlaylist ? getPlaylistTracks(playlistId) : [];
-
   const activePlan = user.activePlanId ? getTrainingPlan(user.activePlanId) : null;
   const currentDay = activePlan && user.planStartDate ? getCurrentPlanDay(user.planStartDate, activePlan.duration) : null;
   const isTodayWorkoutDay = activePlan && currentDay ? isWorkoutDay(activePlan, currentDay) : false;
 
   return (
     <>
+      <audio
+        ref={previewAudioRef}
+        preload="metadata"
+        onTimeUpdate={handlePreviewTimeUpdate}
+        onEnded={() => setPreviewPlaying(false)}
+      />
       {showPlanSelector && <PlanSelector onClose={() => setShowPlanSelector(false)} />}
 
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
@@ -231,6 +324,73 @@ export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) 
           </div>
         </div>
 
+        {/* Push-Up Flow */}
+        <div className="glass glass-border rounded-lg p-4 sm:p-6">
+          <div className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">
+            Push-Up Flow
+          </div>
+          <div className="grid grid-cols-2 border border-dark-border rounded-lg overflow-hidden mb-4">
+            <button
+              type="button"
+              aria-pressed={variationMode === 'rotate'}
+              onClick={() => setVariationMode('rotate')}
+              className={`min-h-11 px-4 text-sm font-bold transition ${
+                variationMode === 'rotate'
+                  ? 'bg-accent text-dark'
+                  : 'glass-light text-gray-400 hover:text-white'
+              }`}
+            >
+              Rotate
+            </button>
+            <button
+              type="button"
+              aria-pressed={variationMode === 'manual'}
+              onClick={() => setVariationMode('manual')}
+              className={`min-h-11 border-l border-dark-border px-4 text-sm font-bold transition ${
+                variationMode === 'manual'
+                  ? 'bg-accent text-dark'
+                  : 'glass-light text-gray-400 hover:text-white'
+              }`}
+            >
+              Manual
+            </button>
+          </div>
+
+          {variationMode === 'rotate' && (
+            <fieldset>
+              <legend className="text-xs text-gray-500 mb-2">
+                Rotation ({variationIds.length})
+              </legend>
+              <div className="max-h-64 overflow-y-auto border-y border-dark-border divide-y divide-dark-border">
+                {pushUpTypes.map((type) => {
+                  const isSelected = variationIds.includes(type.id);
+                  return (
+                    <label
+                      key={type.id}
+                      className={`flex min-h-12 cursor-pointer items-center gap-3 px-2 py-2 transition ${
+                        isSelected ? 'bg-accent/10' : 'hover:bg-white/5'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleVariation(type.id)}
+                        className="h-4 w-4 shrink-0 accent-current"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className={`block truncate text-sm font-bold ${isSelected ? 'text-accent' : 'text-white'}`}>
+                          {type.name}
+                        </span>
+                        <span className="block text-xs capitalize text-gray-500">{type.difficulty}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+        </div>
+
         {/* Music Settings */}
         <div className="glass glass-border rounded-lg p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -241,49 +401,79 @@ export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) 
               </div>
             </div>
             <button
-              onClick={() => setMusicEnabled(!musicEnabled)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${
-                musicEnabled
-                  ? 'bg-accent text-dark'
-                  : 'glass-light text-gray-400 border border-dark-border'
+              type="button"
+              role="switch"
+              aria-checked={musicEnabled}
+              aria-label="Toggle Iron Mode music"
+              onClick={handleMusicToggle}
+              className={`relative h-7 w-12 rounded-full border transition ${
+                musicEnabled ? 'bg-accent border-accent' : 'bg-dark-card border-dark-border'
               }`}
             >
-              {musicEnabled ? 'ON' : 'OFF'}
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                  musicEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
             </button>
           </div>
 
           {musicEnabled && (
-            <div className="space-y-3">
-              <div className="text-xs text-gray-500 mb-2">Select Playlist</div>
-              {playlists.map((playlist) => {
-                const isSelected = playlistId === playlist.playlistId;
-                return (
-                  <button
-                    key={playlist.playlistId}
-                    onClick={() => setPlaylistId(playlist.playlistId)}
-                    className={`w-full p-3 rounded-lg border transition text-left ${
-                      isSelected
-                        ? 'bg-accent/10 border-accent'
-                        : 'glass-light border-dark-border hover:border-accent/50'
-                    }`}
-                  >
-                    <div className={`font-bold text-sm ${isSelected ? 'text-accent' : 'text-white'}`}>
-                      {playlist.name}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">{playlist.description}</div>
-                    {isSelected && selectedTracks.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-dark-border">
-                        <div className="text-xs text-gray-500 mb-1">Tracks:</div>
-                        {selectedTracks.map((track) => (
-                          <div key={track.trackId} className="text-xs text-gray-400">
-                            • {track.title} - {track.artistName} ({track.bpm} BPM)
-                          </div>
-                        ))}
+            <div>
+              <div className="text-xs text-gray-500 mb-2">Track</div>
+              <div className="divide-y divide-dark-border border-y border-dark-border">
+                {ironModeTracks.map((track) => {
+                  const isSelected = trackId === track.trackId;
+                  const isPreviewing = previewTrackId === track.trackId;
+                  return (
+                    <div key={track.trackId} className={isSelected ? 'bg-accent/10' : ''}>
+                      <div className="flex min-h-16 items-center gap-3 px-2 py-2">
+                        <button
+                          type="button"
+                          aria-pressed={isSelected}
+                          onClick={() => setTrackId(track.trackId)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
+                            isSelected ? 'border-accent bg-accent text-dark' : 'border-dark-border text-transparent'
+                          }`}>
+                            <Check size={15} />
+                          </span>
+                          <span className="min-w-0">
+                            <span className={`block truncate text-sm font-bold ${isSelected ? 'text-accent' : 'text-white'}`}>
+                              {track.title}
+                            </span>
+                            <span className="block text-xs text-gray-500">{track.artistName}</span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`${previewPlaying && isPreviewing ? 'Pause' : 'Preview'} ${track.title}`}
+                          aria-pressed={previewPlaying && isPreviewing}
+                          title={`${previewPlaying && isPreviewing ? 'Pause' : 'Preview'} ${track.title}`}
+                          onClick={() => handlePreview(track.trackId)}
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dark-border text-gray-300 transition hover:border-accent hover:text-accent"
+                        >
+                          {previewPlaying && isPreviewing ? <Pause size={18} /> : <Play size={18} />}
+                        </button>
                       </div>
-                    )}
-                  </button>
-                );
-              })}
+                      {isPreviewing && (
+                        <div className="px-2 pb-2">
+                          <div className="h-1 overflow-hidden rounded-full bg-dark-card">
+                            <div
+                              className="h-full bg-accent transition-[width] duration-200"
+                              style={{ width: `${(previewSeconds / PREVIEW_SECONDS) * 100}%` }}
+                            />
+                          </div>
+                          <div className="mt-1 text-right text-xs tabular-nums text-gray-500">
+                            0:{Math.floor(previewSeconds).toString().padStart(2, '0')} / 0:30
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -346,7 +536,7 @@ export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) 
               <div className="text-xs text-gray-500 mb-2">Rest Duration (seconds)</div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setRestDuration(Math.max(30, restDuration - 15))}
+                  onClick={() => setRestDuration(Math.max(15, restDuration - 15))}
                   className="px-3 py-2 glass-light rounded hover:bg-accent/20 transition"
                 >
                   -15
@@ -487,7 +677,7 @@ export const IronModeSetup = ({ onStartSession, onCancel }: IronModeSetupProps) 
         {/* Action Buttons */}
         <div className="flex gap-3">
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="flex-1 py-3 glass-light border border-dark-border rounded-lg font-bold hover:border-accent transition"
           >
             Cancel

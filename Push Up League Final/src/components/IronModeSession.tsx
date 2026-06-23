@@ -7,10 +7,11 @@ import {
   SetLog,
   SetDifficulty,
   SessionEvent,
-  getPlaylistTracks,
+  calculateSessionXP,
+  getTrackById,
   generateSessionId,
 } from '@/lib/ironMode';
-import { Play, Pause, SkipForward, Plus, Check, X } from 'lucide-react';
+import { Play, Pause, Plus, Check, X } from 'lucide-react';
 import { PushUpType, PUSHUP_TYPES } from '@/lib/pushupTypes';
 
 interface IronModeSessionProps {
@@ -18,6 +19,8 @@ interface IronModeSessionProps {
   onEndSession: (session: IronSession) => void;
   userId: string;
 }
+
+const pushUpTypes = Object.values(PUSHUP_TYPES);
 
 export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessionProps) => {
   // Session state
@@ -28,11 +31,11 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     mode: config.sessionType,
     music: {
       enabled: config.musicEnabled,
-      playlistId: config.playlistId,
-      tracksPlayed: [],
+      trackId: config.trackId,
+      tracksPlayed: config.musicEnabled && config.trackId ? [config.trackId] : [],
     },
     sets: [],
-    events: [{ eventType: 'SESSION_END', timestamp: Date.now() }],
+    events: [],
     totalReps: 0,
     totalTime: 0,
   }));
@@ -40,7 +43,9 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   // Current set state
   const [currentSet, setCurrentSet] = useState(1);
   const [currentReps, setCurrentReps] = useState(10);
-  const [currentVariation, setCurrentVariation] = useState<PushUpType>('standard');
+  const [currentVariation, setCurrentVariation] = useState<PushUpType>(
+    config.variationIds[0] ?? 'standard'
+  );
   const [targetReps, setTargetReps] = useState(10);
   const [difficulty, setDifficulty] = useState<SetDifficulty>('okay');
 
@@ -51,12 +56,10 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   const [isPaused, setIsPaused] = useState(false);
 
   // Music state
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const tracks = config.playlistId ? getPlaylistTracks(config.playlistId) : [];
-  const currentTrack = tracks[currentTrackIndex];
+  const currentTrack = config.trackId ? getTrackById(config.trackId) : undefined;
 
   // Session timer
   useEffect(() => {
@@ -88,10 +91,16 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
   // Music auto-play
   useEffect(() => {
-    if (config.musicEnabled && !isPaused) {
-      playMusic();
+    const audio = audioRef.current;
+    if (!audio || !currentTrack || !config.musicEnabled) return;
+
+    if (isPaused) {
+      audio.pause();
+      return;
     }
-  }, [currentTrackIndex]);
+
+    void audio.play().catch(() => setIsPlaying(false));
+  }, [config.musicEnabled, currentTrack, isPaused]);
 
   // Auto-save session draft
   useEffect(() => {
@@ -104,8 +113,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
   const playMusic = () => {
     if (audioRef.current && currentTrack) {
-      audioRef.current.play();
-      setIsPlaying(true);
+      void audioRef.current.play().catch(() => setIsPlaying(false));
     }
   };
 
@@ -113,23 +121,6 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
-    }
-  };
-
-  const skipTrack = () => {
-    if (tracks.length === 0) return;
-    const nextIndex = (currentTrackIndex + 1) % tracks.length;
-    setCurrentTrackIndex(nextIndex);
-
-    // Update session
-    if (currentTrack) {
-      setSession((prev) => ({
-        ...prev,
-        music: {
-          ...prev.music,
-          tracksPlayed: [...prev.music.tracksPlayed, currentTrack.trackId],
-        },
-      }));
     }
   };
 
@@ -198,6 +189,10 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     }
 
     // Prepare next set
+    if (config.variationMode === 'rotate' && config.variationIds.length > 0) {
+      const nextVariationIndex = currentSet % config.variationIds.length;
+      setCurrentVariation(config.variationIds[nextVariationIndex]);
+    }
     setCurrentSet((prev) => prev + 1);
     setCurrentReps(10);
     setDifficulty('okay');
@@ -211,12 +206,19 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   }, [isResting]);
 
   const endSession = () => {
-    addEvent('SESSION_END');
-
-    const finalSession: IronSession = {
+    const endedAt = Date.now();
+    const completedSession: IronSession = {
       ...session,
-      endedAt: Date.now(),
+      endedAt,
+      events: [
+        ...session.events,
+        { eventType: 'SESSION_END', timestamp: endedAt },
+      ],
       totalTime: sessionTime,
+    };
+    const finalSession: IronSession = {
+      ...completedSession,
+      xpEarned: calculateSessionXP(completedSession),
     };
 
     pauseMusic();
@@ -237,8 +239,10 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
         <audio
           ref={audioRef}
           src={currentTrack.audioUrl}
-          onEnded={skipTrack}
+          loop
           autoPlay={config.musicEnabled}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
         />
       )}
 
@@ -272,12 +276,6 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
                   className="p-2 glass-light rounded-lg hover:bg-accent/20 transition"
                 >
                   {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                </button>
-                <button
-                  onClick={skipTrack}
-                  className="p-2 glass-light rounded-lg hover:bg-accent/20 transition"
-                >
-                  <SkipForward size={20} />
                 </button>
               </div>
             </div>
@@ -314,6 +312,23 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
             {/* Rep Input */}
             <div className="space-y-4">
+              {config.variationMode === 'manual' && (
+                <label className="block">
+                  <span className="block text-xs text-gray-400 mb-2">Push-Up Type</span>
+                  <select
+                    value={currentVariation}
+                    onChange={(event) => setCurrentVariation(event.target.value as PushUpType)}
+                    className="w-full min-h-11 rounded-lg border border-dark-border bg-dark-card px-3 text-sm font-bold text-white outline-none focus:border-accent"
+                  >
+                    {pushUpTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name} - {type.difficulty}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
               <div>
                 <div className="text-xs text-gray-400 mb-2">Reps Completed</div>
                 <div className="flex items-center gap-3 justify-center">

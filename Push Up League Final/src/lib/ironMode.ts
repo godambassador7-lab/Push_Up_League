@@ -10,20 +10,9 @@ export interface Track {
   trackId: string;
   title: string;
   artistName: string;
-  artistHandle: string;
-  licenseType: 'royalty_free_collab';
-  bpm: number;
   intensity: Intensity;
   audioUrl: string;
-  artistUrl: string;
-}
-
-export interface Playlist {
-  playlistId: string;
-  name: string;
-  description: string;
-  intensity: Intensity;
-  trackIds: string[];
+  artistUrl?: string;
 }
 
 export interface SessionEvent {
@@ -51,7 +40,7 @@ export interface IronSession {
   mode: SessionType;
   music: {
     enabled: boolean;
-    playlistId?: string;
+    trackId?: string;
     tracksPlayed: string[];
   };
   planContext?: {
@@ -66,81 +55,51 @@ export interface IronSession {
   xpEarned?: number;
 }
 
-// Music Tracks - Royalty-free from Freebeats.io
+const trackAsset = (filename: string) =>
+  `${process.env.NEXT_PUBLIC_RESOLVED_BASE_PATH || ''}/iron-mode-tracks/${filename}`;
+
+// The curated Iron Mode library. Keep this list limited to provided app assets.
 export const IRON_MODE_TRACKS: Record<string, Track> = {
+  'dat-hitta': {
+    trackId: 'dat-hitta',
+    title: 'Dat Hitta',
+    artistName: 'Push Up League',
+    intensity: 'grind',
+    audioUrl: trackAsset('dat-hitta.mp3'),
+  },
   dystopia: {
     trackId: 'dystopia',
     title: 'Dystopia',
-    artistName: 'Freebeats.io',
-    artistHandle: '@freebeatsio',
-    licenseType: 'royalty_free_collab',
-    bpm: 140,
+    artistName: 'Push Up League',
     intensity: 'grind',
-    audioUrl: '/Dystopia - by Freebeats.io.mp3',
-    artistUrl: 'https://freebeats.io',
+    audioUrl: trackAsset('dystopia.mp3'),
   },
-  myClique: {
+  flex: {
+    trackId: 'flex',
+    title: 'Flex',
+    artistName: 'Push Up League',
+    intensity: 'warmup',
+    audioUrl: trackAsset('flex.mp3'),
+  },
+  'flood-the-block': {
+    trackId: 'flood-the-block',
+    title: 'Flood The Block',
+    artistName: 'Push Up League',
+    intensity: 'boss',
+    audioUrl: trackAsset('flood-the-block.mp3'),
+  },
+  'my-clique': {
     trackId: 'my-clique',
     title: 'My Clique',
-    artistName: 'Freebeats.io',
-    artistHandle: '@freebeatsio',
-    licenseType: 'royalty_free_collab',
-    bpm: 150,
+    artistName: 'Push Up League',
     intensity: 'boss',
-    audioUrl: '/My Clique - by Freebeats.io.mp3',
-    artistUrl: 'https://freebeats.io',
-  },
-  thuggedOut: {
-    trackId: 'thugged-out',
-    title: 'Thugged Out',
-    artistName: 'Freebeats.io',
-    artistHandle: '@freebeatsio',
-    licenseType: 'royalty_free_collab',
-    bpm: 145,
-    intensity: 'grind',
-    audioUrl: '/Thugged Out - by Freebeats.io.mp3',
-    artistUrl: 'https://freebeats.io',
-  },
-};
-
-// Playlists
-export const IRON_MODE_PLAYLISTS: Record<string, Playlist> = {
-  grind: {
-    playlistId: 'grind',
-    name: 'The Grind',
-    description: 'High-intensity workout playlist to push your limits',
-    intensity: 'grind',
-    trackIds: ['dystopia', 'thugged-out'],
-  },
-  boss: {
-    playlistId: 'boss',
-    name: 'Boss Fight',
-    description: 'Maximum intensity for crushing personal records',
-    intensity: 'boss',
-    trackIds: ['my-clique', 'dystopia', 'thugged-out'],
-  },
-  full: {
-    playlistId: 'full',
-    name: 'Full Session',
-    description: 'Complete workout playlist rotating all tracks',
-    intensity: 'grind',
-    trackIds: ['dystopia', 'my-clique', 'thugged-out'],
+    audioUrl: trackAsset('my-clique.mp3'),
   },
 };
 
 // Helper functions
 export const getTrackById = (trackId: string): Track | undefined => {
   return IRON_MODE_TRACKS[trackId];
-};
-
-export const getPlaylistById = (playlistId: string): Playlist | undefined => {
-  return IRON_MODE_PLAYLISTS[playlistId];
-};
-
-export const getPlaylistTracks = (playlistId: string): Track[] => {
-  const playlist = IRON_MODE_PLAYLISTS[playlistId];
-  if (!playlist) return [];
-  return playlist.trackIds.map(id => IRON_MODE_TRACKS[id]).filter(Boolean);
 };
 
 export const calculateSessionXP = (session: IronSession): number => {

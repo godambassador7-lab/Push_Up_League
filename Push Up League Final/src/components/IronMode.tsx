@@ -32,7 +32,7 @@ export const IronMode = ({ onExit }: IronModeProps) => {
     setCompletedSession(session);
 
     // Save to store
-    if (session.endedAt && session.xpEarned) {
+    if (session.endedAt && session.totalReps > 0) {
       const workoutSets: WorkoutSet[] = session.sets.map((set) => {
         const normalizedVariation = set.variation
           .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
