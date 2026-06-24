@@ -6,6 +6,8 @@ import { IronModeSession } from './IronModeSession';
 import { IronModeSummary } from './IronModeSummary';
 import { IronSession } from '@/lib/ironMode';
 import { useEnhancedStore } from '@/lib/enhancedStore';
+import { WorkoutSet } from '@/lib/enhancedStore';
+import { PUSHUP_TYPES, PushUpType } from '@/lib/pushupTypes';
 
 type IronModeScreen = 'setup' | 'session' | 'summary';
 
@@ -20,7 +22,6 @@ export const IronMode = ({ onExit }: IronModeProps) => {
 
   const userId = useEnhancedStore((state) => state.userId);
   const addWorkout = useEnhancedStore((state) => state.logWorkout);
-  const addXP = useEnhancedStore((state) => state.addXP);
 
   const handleStartSession = (config: SessionConfig) => {
     setSessionConfig(config);
@@ -31,12 +32,28 @@ export const IronMode = ({ onExit }: IronModeProps) => {
     setCompletedSession(session);
 
     // Save to store
-    if (session.endedAt && session.xpEarned) {
-      // Log as workout
-      addWorkout(session.totalReps, session.sets);
+    if (session.endedAt && session.totalReps > 0) {
+      const workoutSets: WorkoutSet[] = session.sets.map((set) => {
+        const normalizedVariation = set.variation
+          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-');
+        const candidate = normalizedVariation === 'incline'
+          ? 'high-incline'
+          : normalizedVariation;
+        const type = candidate in PUSHUP_TYPES
+          ? candidate as PushUpType
+          : 'standard';
 
-      // Award XP
-      addXP(session.xpEarned);
+        return {
+          reps: set.actualReps,
+          type,
+          restAfter: set.restAfter,
+        };
+      });
+
+      addWorkout(session.totalReps, workoutSets, false, Math.round(session.totalTime / 60));
     }
 
     // Save session to localStorage history

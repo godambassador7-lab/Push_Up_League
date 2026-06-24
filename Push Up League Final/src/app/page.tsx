@@ -59,8 +59,10 @@ export default function Dashboard() {
   // Listen for workout changes and show tip popup
   useEffect(() => {
     const unsubscribe = useEnhancedStore.subscribe(
-      (state) => state.workouts.length,
-      (workoutCount, prevWorkoutCount) => {
+      (state, prevState) => {
+        const workoutCount = state.workouts.length;
+        const prevWorkoutCount = prevState.workouts.length;
+
         // Show tip popup when a new workout is logged
         if (workoutCount > prevWorkoutCount) {
           const tip = getTipForWorkout(workoutCount);
@@ -223,7 +225,7 @@ export default function Dashboard() {
                 </p>
                 {isWorldRecordCandidate && (
                   <div className="mt-4 inline-block px-6 py-2 bg-gradient-to-r from-warning/30 to-gold/30 border-2 border-warning rounded-lg text-warning text-sm sm:text-base font-black text-hero animate-pulse-glow">
-                    👑 WORLD RECORD CANDIDATE
+                    WORLD RECORD CANDIDATE
                   </div>
                 )}
               </div>

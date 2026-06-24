@@ -1,6 +1,7 @@
 ﻿/** @type {import('next').NextConfig} */
 const isProd = process.env.NODE_ENV === 'production';
-const basePath = isProd ? (process.env.NEXT_PUBLIC_BASE_PATH || '') : '';
+const isVercel = Boolean(process.env.VERCEL);
+const basePath = isProd && !isVercel ? (process.env.NEXT_PUBLIC_BASE_PATH || '') : '';
 
 const nextConfig = {
   reactStrictMode: true,
@@ -8,17 +9,12 @@ const nextConfig = {
   ...(isProd ? { output: 'export' } : {}),
   basePath,
   assetPrefix: isProd && basePath ? basePath : undefined,
+  env: {
+    NEXT_PUBLIC_RESOLVED_BASE_PATH: basePath,
+  },
   trailingSlash: true,
   images: {
     unoptimized: true,
-  },
-  eslint: {
-    // Skip linting during export builds to avoid missing eslint dependency in CI/Pages
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // Allow build to proceed even if stray TS files in /public fail type checks
-    ignoreBuildErrors: true,
   },
   webpack: (config, { dev }) => {
     if (dev) {

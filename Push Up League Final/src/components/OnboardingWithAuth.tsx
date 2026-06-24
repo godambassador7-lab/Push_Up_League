@@ -82,7 +82,7 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
         if (userProfile) {
           // User already exists, just log them in
           const storeLogin = useEnhancedStore.getState().login;
-          await storeLogin(result.user.email || '', '');
+          await storeLogin(result.user.email || '', '', result.user.uid);
           setLoading(false);
           return;
         }
@@ -472,11 +472,11 @@ export const OnboardingWithAuth = ({ onSwitchToLogin }: OnboardingWithAuthProps)
                     <div className="text-sm text-gray-300">
                       You've indicated world-class performance levels. You will be placed in the
                       <span className="font-bold text-accent"> World Record Leaders </span>
-                      leaderboard with exponentially challenging goals.
+                      leaderboard with harder goals.
                     </div>
                     <div className="text-xs text-gray-400 mt-2">
-                      Note: Exceptional performance data may be submitted to Guinness World Records
-                      organization for verification.
+                      Note: Exceptional performance may require independent verification before it
+                      appears in record-level leaderboards.
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { IronSession, calculateSessionXP, getTrackById } from '@/lib/ironMode';
+import { IronSession, Track, calculateSessionXP, getTrackById } from '@/lib/ironMode';
 import { Trophy, Clock, Zap, TrendingUp, Music, ExternalLink } from 'lucide-react';
 
 interface IronModeSummaryProps {
@@ -22,7 +22,7 @@ export const IronModeSummary = ({ session, onClose }: IronModeSummaryProps) => {
   const uniqueTracks = new Set(session.music.tracksPlayed);
   const tracksListened = Array.from(uniqueTracks)
     .map((id) => getTrackById(id))
-    .filter(Boolean);
+    .filter((track): track is Track => Boolean(track));
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -134,7 +134,7 @@ export const IronModeSummary = ({ session, onClose }: IronModeSummaryProps) => {
             <div className="flex items-center gap-2 mb-4">
               <Music size={18} className="text-accent" />
               <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                Music by
+                Music
               </div>
             </div>
 
@@ -148,20 +148,25 @@ export const IronModeSummary = ({ session, onClose }: IronModeSummaryProps) => {
                     <div className="font-bold text-white">{track.title}</div>
                     <div className="text-sm text-gray-400">{track.artistName}</div>
                   </div>
-                  <a
-                    href={track.artistUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 glass-light rounded-lg hover:bg-accent/20 transition text-accent"
-                  >
-                    <ExternalLink size={18} />
-                  </a>
+                  {track.artistUrl && (
+                    <a
+                      href={track.artistUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Open ${track.artistName}`}
+                      className="p-2 glass-light rounded-lg hover:bg-accent/20 transition text-accent"
+                    >
+                      <ExternalLink size={18} />
+                    </a>
+                  )}
                 </div>
               ))}
 
-              <div className="text-xs text-gray-500 text-center pt-2">
-                Tap to follow / stream / support
-              </div>
+              {tracksListened.some((track) => track.artistUrl) && (
+                <div className="text-xs text-gray-500 text-center pt-2">
+                  Tap to follow / stream / support
+                </div>
+              )}
             </div>
           </div>
         )}
