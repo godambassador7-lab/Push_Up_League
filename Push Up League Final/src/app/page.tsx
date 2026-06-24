@@ -56,6 +56,13 @@ export default function Dashboard() {
     syncManager.initialize();
   }, []);
 
+  // Auth screens must not keep an authenticated user trapped after Firebase finishes loading.
+  useEffect(() => {
+    if (isAuthenticated && showAuthModal) {
+      setShowAuthModal(null);
+    }
+  }, [isAuthenticated, showAuthModal]);
+
   // Listen for workout changes and show tip popup
   useEffect(() => {
     const unsubscribe = useEnhancedStore.subscribe(
@@ -118,11 +125,11 @@ export default function Dashboard() {
   }
 
   // Show auth modals
-  if (showAuthModal === 'register') {
+  if (!isAuthenticated && showAuthModal === 'register') {
     return <OnboardingWithAuth onSwitchToLogin={() => setShowAuthModal('login')} />;
   }
 
-  if (showAuthModal === 'login') {
+  if (!isAuthenticated && showAuthModal === 'login') {
     return <Login onSwitchToRegister={() => setShowAuthModal('register')} />;
   }
 
