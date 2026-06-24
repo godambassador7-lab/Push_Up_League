@@ -56,6 +56,13 @@ export default function Dashboard() {
     syncManager.initialize();
   }, []);
 
+  // Auth screens must not keep an authenticated user trapped after Firebase finishes loading.
+  useEffect(() => {
+    if (isAuthenticated && showAuthModal) {
+      setShowAuthModal(null);
+    }
+  }, [isAuthenticated, showAuthModal]);
+
   // Listen for workout changes and show tip popup
   useEffect(() => {
     const unsubscribe = useEnhancedStore.subscribe(
@@ -109,7 +116,7 @@ export default function Dashboard() {
               onClick={() => useEnhancedStore.setState({ isAuthenticated: true, username: 'Guest' })}
               className="mt-3 text-sm text-accent hover:text-accent-light transition"
             >
-              Skip for now →
+              Skip for now â†’
             </button>
           </div>
         </div>
@@ -118,11 +125,11 @@ export default function Dashboard() {
   }
 
   // Show auth modals
-  if (showAuthModal === 'register') {
+  if (!isAuthenticated && showAuthModal === 'register') {
     return <OnboardingWithAuth onSwitchToLogin={() => setShowAuthModal('login')} />;
   }
 
-  if (showAuthModal === 'login') {
+  if (!isAuthenticated && showAuthModal === 'login') {
     return <Login onSwitchToRegister={() => setShowAuthModal('register')} />;
   }
 
@@ -260,8 +267,8 @@ export default function Dashboard() {
                     {todayWorkout && (
                       <div className="mt-4 pt-4 border-t border-dark-border w-full">
                         <div className="text-sm text-success">
-                          ✓ {todayWorkout.pushups} completed today
-                          {todayWorkout.pushups >= dailyGoal && ' • Goal achieved!'}
+                          âœ“ {todayWorkout.pushups} completed today
+                          {todayWorkout.pushups >= dailyGoal && ' â€¢ Goal achieved!'}
                         </div>
                       </div>
                     )}
@@ -379,8 +386,8 @@ export default function Dashboard() {
       {/* Footer */}
       <footer className="border-t border-dark-border glass-light py-6 sm:py-8 mt-8 sm:mt-12">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 text-center text-xs sm:text-sm text-gray-500">
-          <p>Push-Up League • Discipline Over Motivation</p>
-          <p className="mt-2">v2.0.0 BETA • Full Integration</p>
+          <p>Push-Up League â€¢ Discipline Over Motivation</p>
+          <p className="mt-2">v2.0.0 BETA â€¢ Full Integration</p>
         </div>
       </footer>
 
