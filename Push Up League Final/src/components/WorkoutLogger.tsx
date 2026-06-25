@@ -78,13 +78,13 @@ export const WorkoutLogger = () => {
         />
       )}
 
-      <div className="space-y-6 p-6 rounded-lg glass-border glass">
+      <div className="space-y-6 p-4 sm:p-6 rounded-lg glass-border glass overflow-hidden">
       <div>
         <label className="text-sm text-gray-400 uppercase tracking-wider font-display">Push-ups</label>
-        <div className="flex items-center gap-4 mt-3">
+        <div className="flex items-center gap-2 sm:gap-4 mt-3 min-w-0">
           <button
             onClick={() => setPushups(Math.max(1, pushups - 5))}
-            className="p-2 glass-light rounded hover:bg-accent/20 transition"
+            className="p-2 glass-light rounded hover:bg-accent/20 transition shrink-0"
           >
             <Minus size={20} />
           </button>
@@ -92,11 +92,11 @@ export const WorkoutLogger = () => {
             type="number"
             value={pushups}
             onChange={(e) => setPushups(parseInt(e.target.value) || 1)}
-            className="flex-1 glass-light border border-dark-border rounded px-4 py-2 text-center text-lg font-bold text-white outline-none focus:border-accent"
+            className="min-w-0 flex-1 glass-light border border-dark-border rounded px-3 sm:px-4 py-2 text-center text-lg font-bold text-white outline-none focus:border-accent"
           />
           <button
             onClick={() => setPushups(pushups + 5)}
-            className="p-2 glass-light rounded hover:bg-accent/20 transition"
+            className="p-2 glass-light rounded hover:bg-accent/20 transition shrink-0"
           >
             <Plus size={20} />
           </button>
@@ -105,10 +105,10 @@ export const WorkoutLogger = () => {
 
       <div>
         <label className="text-sm text-gray-400 uppercase tracking-wider font-display">Sets</label>
-        <div className="flex items-center gap-4 mt-3">
+        <div className="flex items-center gap-2 sm:gap-4 mt-3 min-w-0">
           <button
             onClick={() => setSets(Math.max(1, sets - 1))}
-            className="p-2 glass-light rounded hover:bg-accent/20 transition"
+            className="p-2 glass-light rounded hover:bg-accent/20 transition shrink-0"
           >
             <Minus size={20} />
           </button>
@@ -116,11 +116,11 @@ export const WorkoutLogger = () => {
             type="number"
             value={sets}
             onChange={(e) => setSets(parseInt(e.target.value) || 1)}
-            className="flex-1 glass-light border border-dark-border rounded px-4 py-2 text-center text-lg font-bold text-white outline-none focus:border-accent"
+            className="min-w-0 flex-1 glass-light border border-dark-border rounded px-3 sm:px-4 py-2 text-center text-lg font-bold text-white outline-none focus:border-accent"
           />
           <button
             onClick={() => setSets(sets + 1)}
-            className="p-2 glass-light rounded hover:bg-accent/20 transition"
+            className="p-2 glass-light rounded hover:bg-accent/20 transition shrink-0"
           >
             <Plus size={20} />
           </button>
