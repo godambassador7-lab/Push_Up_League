@@ -52,6 +52,8 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   // Timer state
   const [sessionTime, setSessionTime] = useState(0);
   const [restTime, setRestTime] = useState(0);
+  const [activeRestDuration, setActiveRestDuration] = useState(config.restDuration);
+  const [extraRestSeconds, setExtraRestSeconds] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -78,7 +80,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
     const interval = setInterval(() => {
       setRestTime((prev) => {
-        if (prev >= config.restDuration) {
+        if (prev >= activeRestDuration) {
           setIsResting(false);
           return 0;
         }
@@ -87,7 +89,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isResting, isPaused, config.restDuration]);
+  }, [isResting, isPaused, activeRestDuration]);
 
   // Music auto-play
   useEffect(() => {
@@ -151,6 +153,8 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     }));
   };
 
+  const nextRestDuration = Math.min(300, config.restDuration + extraRestSeconds);
+
   const completeSet = () => {
     const setLog: SetLog = {
       setNumber: currentSet,
@@ -159,7 +163,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
       actualReps: currentReps,
       difficulty,
       timestamp: Date.now(),
-      restAfter: config.restTimer ? config.restDuration : undefined,
+      restAfter: config.restTimer ? nextRestDuration : undefined,
     };
 
     setSession((prev) => ({
@@ -178,9 +182,10 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
     // Start rest timer
     if (config.restTimer) {
+      setActiveRestDuration(nextRestDuration);
       setIsResting(true);
       setRestTime(0);
-      addEvent('REST_START');
+      addEvent('REST_START', { duration: nextRestDuration });
 
       // Duck music volume during rest
       if (audioRef.current) {
@@ -196,6 +201,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     setCurrentSet((prev) => prev + 1);
     setCurrentReps(10);
     setDifficulty('okay');
+    setExtraRestSeconds(0);
   };
 
   // Restore music volume after rest
@@ -288,12 +294,12 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
             <div className="text-center">
               <div className="text-sm text-gray-400 uppercase tracking-wider mb-2">Rest Period</div>
               <div className="text-5xl font-black text-accent mb-2">
-                {formatTime(config.restDuration - restTime)}
+                {formatTime(Math.max(0, activeRestDuration - restTime))}
               </div>
               <div className="h-2 bg-dark-card rounded-full overflow-hidden">
                 <div
                   className="h-full bg-accent transition-all duration-1000"
-                  style={{ width: `${(restTime / config.restDuration) * 100}%` }}
+                  style={{ width: `${(restTime / activeRestDuration) * 100}%` }}
                 />
               </div>
             </div>
@@ -374,7 +380,10 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
                   {(['easy', 'okay', 'hard'] as SetDifficulty[]).map((level) => (
                     <button
                       key={level}
-                      onClick={() => setDifficulty(level)}
+                      onClick={() => {
+                        setDifficulty(level);
+                        if (level !== 'hard') setExtraRestSeconds(0);
+                      }}
                       className={`px-6 py-2 rounded-lg font-bold capitalize transition ${
                         difficulty === level
                           ? 'bg-accent text-dark'
@@ -386,6 +395,46 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
                   ))}
                 </div>
               </div>
+
+              {config.restTimer && difficulty === 'hard' && (
+                <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-bold text-white">Need more rest?</div>
+                      <div className="text-xs text-gray-400">
+                        Next rest: {formatTime(nextRestDuration)}
+                      </div>
+                    </div>
+                    {extraRestSeconds > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setExtraRestSeconds(0)}
+                        className="rounded border border-dark-border px-3 py-1.5 text-xs font-bold text-gray-300 transition hover:border-warning hover:text-warning"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExtraRestSeconds((seconds) => Math.min(300 - config.restDuration, seconds + 15))}
+                      className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-warning/50 px-3 text-sm font-bold text-warning transition hover:bg-warning/20"
+                    >
+                      <Plus size={16} />
+                      15 sec
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtraRestSeconds((seconds) => Math.min(300 - config.restDuration, seconds + 30))}
+                      className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-warning/50 px-3 text-sm font-bold text-warning transition hover:bg-warning/20"
+                    >
+                      <Plus size={16} />
+                      30 sec
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Complete Set Button */}
               <button
