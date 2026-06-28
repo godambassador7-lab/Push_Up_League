@@ -38,6 +38,10 @@ export default function Dashboard() {
   const currentStreak = useEnhancedStore((state) => state.currentStreak);
   const longestStreak = useEnhancedStore((state) => state.longestStreak);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
+  const recommendedDailyGoal = useEnhancedStore((state) => state.recommendedDailyGoal);
+  const customDailyGoal = useEnhancedStore((state) => state.customDailyGoal);
+  const lastGoalAdjustment = useEnhancedStore((state) => state.lastGoalAdjustment);
+  const recoveryModeUntil = useEnhancedStore((state) => state.recoveryModeUntil);
   const proficiency = useEnhancedStore((state) => state.proficiency);
   const isWorldRecordCandidate = useEnhancedStore((state) => state.isWorldRecordCandidate);
   const workouts = useEnhancedStore((state) => state.workouts);
@@ -45,11 +49,13 @@ export default function Dashboard() {
   const getNextRankProgress = useEnhancedStore((state) => state.getNextRankProgress);
   const getStreakStatus = useEnhancedStore((state) => state.getStreakStatus);
   const getTodayWorkout = useEnhancedStore((state) => state.getTodayWorkout);
+  const getWeeklyReview = useEnhancedStore((state) => state.getWeeklyReview);
 
   const rankProgress = getNextRankProgress();
   const streakStatus = getStreakStatus();
   const nextRankData = currentRank < RANK_LADDER.length ? RANK_LADDER[currentRank] : null;
   const todayWorkout = getTodayWorkout();
+  const weeklyReview = getWeeklyReview();
 
   // Initialize sync manager on mount
   useEffect(() => {
@@ -264,16 +270,60 @@ export default function Dashboard() {
                       {dailyGoal}
                     </div>
                     <div className="text-xl sm:text-2xl font-bold text-gray-300 mt-1">PUSH-UPS</div>
+                    {customDailyGoal && (
+                      <div className="mt-3 text-xs text-gray-400">
+                        Suggested: <span className="text-accent font-bold">{recommendedDailyGoal}</span>
+                      </div>
+                    )}
+                    {recoveryModeUntil && (
+                      <div className="mt-2 rounded border border-warning/40 px-3 py-1 text-xs font-bold text-warning">
+                        Recovery mode through {recoveryModeUntil}
+                      </div>
+                    )}
+                    {lastGoalAdjustment && (
+                      <div className="mt-3 max-w-xs text-xs text-gray-400">
+                        {lastGoalAdjustment.reason}
+                      </div>
+                    )}
                     {todayWorkout && (
                       <div className="mt-4 pt-4 border-t border-dark-border w-full">
                         <div className="text-sm text-success">
                           âœ“ {todayWorkout.pushups} completed today
-                          {todayWorkout.pushups >= dailyGoal && ' â€¢ Goal achieved!'}
+                          {todayWorkout.goalCompleted && ' • Goal achieved!'}
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className="max-w-4xl mx-auto mt-6 glass glass-border rounded-xl p-5">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <div className="text-xs text-gray-400 uppercase tracking-widest font-bold">Weekly Review</div>
+                    <div className="text-xl font-black text-white mt-1">{weeklyReview.totalPushups.toLocaleString()} reps this week</div>
+                  </div>
+                  <TrendingUp className="text-accent" size={28} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                  <div className="glass-light rounded-lg p-3">
+                    <div className="text-xs text-gray-400">Goal Rate</div>
+                    <div className="text-xl font-bold text-success">{weeklyReview.goalCompletionRate}%</div>
+                  </div>
+                  <div className="glass-light rounded-lg p-3">
+                    <div className="text-xs text-gray-400">Consistency</div>
+                    <div className="text-xl font-bold text-electric-blue">{weeklyReview.consistencyScore}%</div>
+                  </div>
+                  <div className="glass-light rounded-lg p-3">
+                    <div className="text-xs text-gray-400">Best Day</div>
+                    <div className="text-xl font-bold text-accent">{weeklyReview.bestDay?.pushups || 0}</div>
+                  </div>
+                  <div className="glass-light rounded-lg p-3">
+                    <div className="text-xs text-gray-400">Next Target</div>
+                    <div className="text-xl font-bold text-warning">{weeklyReview.suggestedTarget}</div>
+                  </div>
+                </div>
+                <div className="mt-4 text-sm text-gray-300">{weeklyReview.recommendation}</div>
               </div>
 
               {/* Proficiency */}

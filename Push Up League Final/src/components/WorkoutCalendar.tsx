@@ -228,7 +228,8 @@ export const WorkoutCalendar = () => {
                           (year === today.getFullYear() && month === today.getMonth() && day > todayDate);
           const hasWorkout = !!workout;
           const isLocked = workout?.isLocked || false;
-          const metGoal = workout && workout.pushups >= dailyGoal;
+          const dayGoal = workout?.dailyGoalAtTime || dailyGoal;
+          const metGoal = workout && workout.pushups >= dayGoal;
           const isExpanded = expandedDay === day;
           const caloriesBurned = workout ? getWorkoutCalories(workout) : 0;
           const breakdown = workout ? getWorkoutBreakdown(workout) : [];
@@ -297,6 +298,9 @@ export const WorkoutCalendar = () => {
                     <span>Workout Details</span>
                     <span>{caloriesBurned.toFixed(1)} cal</span>
                   </div>
+                  <div className="mb-2 text-[11px] text-gray-400">
+                    Goal that day: <span className="font-bold text-accent">{dayGoal}</span>
+                  </div>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {breakdown.map((item) => (
                       <div key={item.type} className="flex items-start justify-between gap-2">
@@ -327,7 +331,8 @@ export const WorkoutCalendar = () => {
             const isFuture = date > today;
             const hasWorkout = !!workout;
             const isLocked = workout?.isLocked || false;
-            const metGoal = workout && workout.pushups >= dailyGoal;
+            const dayGoal = workout?.dailyGoalAtTime || dailyGoal;
+            const metGoal = workout && workout.pushups >= dayGoal;
             const isExpanded = expandedDay === date.getDate();
             const caloriesBurned = workout ? getWorkoutCalories(workout) : 0;
             const breakdown = workout ? getWorkoutBreakdown(workout) : [];
@@ -398,6 +403,9 @@ export const WorkoutCalendar = () => {
                             <span>Goal Met</span>
                           </div>
                         )}
+                        <div className="text-xs text-gray-400">
+                          Goal {dayGoal}
+                        </div>
                         {isLocked && (
                           <div className="flex items-center gap-1 text-xs text-warning">
                             <Lock size={12} />

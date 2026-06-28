@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check, Sparkles, HelpCircle } from 'lucide-react';
+import { Settings, Info, X, ChevronRight, User, Lock, Bell, Palette, Database, LogOut, Save, Trash2, ShoppingBag, Zap, Youtube, AlertCircle, Flame, Scale, Check, Sparkles, HelpCircle, Target } from 'lucide-react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { syncManager } from '@/lib/syncManager';
 import { TitleShop } from './TitleShop';
@@ -15,7 +15,7 @@ interface MenuProps {
 }
 
 export const Menu = ({ onClose }: MenuProps) => {
-  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'shop' | 'powerups' | 'calories' | 'legal' | 'updates' | 'help'>('main');
+  const [activeSection, setActiveSection] = useState<'main' | 'settings' | 'about' | 'profile' | 'privacy' | 'goals' | 'shop' | 'powerups' | 'calories' | 'legal' | 'updates' | 'help'>('main');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -27,7 +27,18 @@ export const Menu = ({ onClose }: MenuProps) => {
   const isAuthenticated = useEnhancedStore((state) => state.isAuthenticated);
   const totalXp = useEnhancedStore((state) => state.totalXp);
   const workouts = useEnhancedStore((state) => state.workouts);
+  const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
+  const recommendedDailyGoal = useEnhancedStore((state) => state.recommendedDailyGoal);
+  const customDailyGoal = useEnhancedStore((state) => state.customDailyGoal);
+  const goalAdjustmentMode = useEnhancedStore((state) => state.goalAdjustmentMode);
+  const lastGoalAdjustment = useEnhancedStore((state) => state.lastGoalAdjustment);
+  const recoveryModeUntil = useEnhancedStore((state) => state.recoveryModeUntil);
+  const setGoalAdjustmentMode = useEnhancedStore((state) => state.setGoalAdjustmentMode);
+  const setCustomDailyGoal = useEnhancedStore((state) => state.setCustomDailyGoal);
+  const activateRecoveryMode = useEnhancedStore((state) => state.activateRecoveryMode);
+  const clearRecoveryMode = useEnhancedStore((state) => state.clearRecoveryMode);
   const logout = useEnhancedStore((state) => state.logout);
+  const [customGoalInput, setCustomGoalInput] = useState(String(customDailyGoal || dailyGoal));
 
   const handleLogout = () => {
     logout();
@@ -73,6 +84,7 @@ export const Menu = ({ onClose }: MenuProps) => {
             {activeSection === 'main' && 'Menu'}
             {activeSection === 'settings' && 'Settings'}
             {activeSection === 'profile' && 'Profile'}
+            {activeSection === 'goals' && 'Goal System'}
             {activeSection === 'privacy' && 'Privacy'}
             {activeSection === 'about' && 'About'}
             {activeSection === 'shop' && 'Title Shop'}
@@ -290,6 +302,22 @@ export const Menu = ({ onClose }: MenuProps) => {
                   <div className="border-t border-dark-border"></div>
 
                   <button
+                    onClick={() => setActiveSection('goals')}
+                    className="w-full p-4 flex items-center justify-between hover:bg-accent/10 transition group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Target size={18} className="text-accent" />
+                      <div className="text-left">
+                        <div className="text-sm font-display">Goal System</div>
+                        <div className="text-xs text-gray-400">Adaptive targets, override, and recovery</div>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} className="text-gray-400 group-hover:text-accent transition" />
+                  </button>
+
+                  <div className="border-t border-dark-border"></div>
+
+                  <button
                     onClick={() => setActiveSection('privacy')}
                     className="w-full p-4 flex items-center justify-between hover:bg-accent/10 transition group"
                   >
@@ -397,6 +425,126 @@ export const Menu = ({ onClose }: MenuProps) => {
                   <p className="text-xs text-gray-500 mt-2 text-center">
                     {showClearConfirm ? 'This cannot be undone!' : 'Removes all data from this device'}
                   </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Goals Section */}
+          {activeSection === 'goals' && (
+            <div className="space-y-6">
+              <button
+                onClick={() => setActiveSection('settings')}
+                className="text-sm text-accent hover:text-accent-light flex items-center gap-2 mb-4"
+              >
+                ← Back to Settings
+              </button>
+
+              <div className="glass-light rounded-lg border border-dark-border p-6 space-y-6">
+                <div>
+                  <h3 className="font-display text-lg text-accent">Goal System</h3>
+                  <div className="mt-2 text-sm text-gray-300">
+                    Current goal: <span className="font-bold text-accent">{dailyGoal}</span>
+                    {customDailyGoal && (
+                      <span className="ml-2 text-xs text-gray-400">Suggested {recommendedDailyGoal}</span>
+                    )}
+                  </div>
+                  {lastGoalAdjustment && (
+                    <div className="mt-3 rounded-lg border border-dark-border bg-dark/40 p-3 text-xs text-gray-300">
+                      {lastGoalAdjustment.reason}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Adaptive Speed</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['conservative', 'balanced', 'aggressive'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setGoalAdjustmentMode(mode)}
+                        className={`min-h-11 rounded-lg border px-2 text-xs font-bold capitalize transition ${
+                          goalAdjustmentMode === mode
+                            ? 'border-accent bg-accent text-dark'
+                            : 'border-dark-border text-gray-300 hover:border-accent'
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-dark-border pt-4">
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Manual Goal Override</div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={5}
+                      step={5}
+                      value={customGoalInput}
+                      onChange={(event) => setCustomGoalInput(event.target.value)}
+                      className="min-w-0 flex-1 rounded-lg border border-dark-border bg-dark-card px-3 py-2 text-sm font-bold text-white outline-none focus:border-accent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomDailyGoal(Number(customGoalInput))}
+                      className="rounded-lg bg-accent px-4 text-sm font-bold text-dark"
+                    >
+                      Set
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomDailyGoal(null)}
+                      className="rounded-lg border border-dark-border px-4 text-sm font-bold text-gray-300 hover:border-accent"
+                    >
+                      Auto
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-dark-border pt-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs text-gray-400 uppercase tracking-wider">Recovery Mode</div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {recoveryModeUntil ? `Active through ${recoveryModeUntil}` : 'Off'}
+                      </div>
+                    </div>
+                    {recoveryModeUntil && (
+                      <button
+                        type="button"
+                        onClick={clearRecoveryMode}
+                        className="rounded-lg border border-warning/50 px-3 py-2 text-xs font-bold text-warning hover:bg-warning/10"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => activateRecoveryMode(3, 20)}
+                      className="rounded-lg border border-dark-border px-3 py-2 text-xs font-bold text-gray-300 hover:border-warning hover:text-warning"
+                    >
+                      3 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => activateRecoveryMode(7, 25)}
+                      className="rounded-lg border border-dark-border px-3 py-2 text-xs font-bold text-gray-300 hover:border-warning hover:text-warning"
+                    >
+                      7 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => activateRecoveryMode(14, 35)}
+                      className="rounded-lg border border-dark-border px-3 py-2 text-xs font-bold text-gray-300 hover:border-warning hover:text-warning"
+                    >
+                      14 days
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

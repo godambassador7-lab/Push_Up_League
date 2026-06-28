@@ -149,7 +149,9 @@ export function calculateDailyGoal(
   currentStreak: number,
   personalBest: number,
   workoutHistory?: { date: string; pushups: number; goalCompleted?: boolean }[],
-  currentDailyGoal?: number
+  currentDailyGoal?: number,
+  adjustmentMode: 'conservative' | 'balanced' | 'aggressive' = 'balanced',
+  recoveryReductionPercent = 0
 ): number {
   const profData = PROFICIENCY_LEVELS[proficiency];
   const baseGoal = profData.dailyCapacity.min;
@@ -180,6 +182,11 @@ export function calculateDailyGoal(
   }
 
   const roundedToFive = (value: number) => Math.max(5, Math.round(value / 5) * 5);
+  const modeMultiplier = {
+    conservative: 0.65,
+    balanced: 1,
+    aggressive: 1.35,
+  }[adjustmentMode];
   const currentGoal = currentDailyGoal && currentDailyGoal > 0
     ? currentDailyGoal
     : Math.max(baseGoal, Math.min(personalBest || baseGoal, profData.dailyCapacity.max));
@@ -192,16 +199,16 @@ export function calculateDailyGoal(
 
   if (latestWorkout.pushups >= currentGoal) {
     const exceedRatio = (latestWorkout.pushups - currentGoal) / currentGoal;
-    adjustmentPercent = exceedRatio >= 0.25 ? 0.08 : 0.04;
+    adjustmentPercent = (exceedRatio >= 0.25 ? 0.08 : 0.04) * modeMultiplier;
     if (recentWorkouts.length >= 3 && completionRate >= 0.75) {
-      adjustmentPercent += 0.03;
+      adjustmentPercent += 0.03 * modeMultiplier;
     }
     newGoal = Math.max(currentGoal + 5, currentGoal * (1 + Math.min(adjustmentPercent, 0.12)));
   } else {
     const missRatio = (currentGoal - latestWorkout.pushups) / currentGoal;
-    adjustmentPercent = missRatio >= 0.5 ? 0.12 : missRatio >= 0.25 ? 0.08 : 0.04;
+    adjustmentPercent = (missRatio >= 0.5 ? 0.12 : missRatio >= 0.25 ? 0.08 : 0.04) * modeMultiplier;
     if (recentWorkouts.length >= 3 && completionRate <= 0.33) {
-      adjustmentPercent += 0.03;
+      adjustmentPercent += 0.03 * modeMultiplier;
     }
     newGoal = currentGoal * (1 - Math.min(adjustmentPercent, 0.15));
   }
@@ -215,6 +222,10 @@ export function calculateDailyGoal(
   // Enforce proficiency bounds
   const minGoal = Math.max(10, Math.floor(profData.dailyCapacity.min * 0.5));
   const maxGoal = profData.dailyCapacity.max;
+
+  if (recoveryReductionPercent > 0) {
+    newGoal *= 1 - Math.min(recoveryReductionPercent, 60) / 100;
+  }
 
   return roundedToFive(Math.max(minGoal, Math.min(newGoal, maxGoal)));
 }

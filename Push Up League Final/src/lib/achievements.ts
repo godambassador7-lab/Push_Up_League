@@ -21,7 +21,50 @@ export interface AchievementCheckData {
   workouts: any[];
   variationStats: Record<PushUpType, number>;
   totalGoalsCompleted?: number;
+  dailyGoal?: number;
+  personalBest?: number;
 }
+
+const getBestWorkout = (data: AchievementCheckData) =>
+  data.workouts.reduce<any | null>((best, workout) => (
+    !best || workout.pushups > best.pushups ? workout : best
+  ), null);
+
+const getBestSetCount = (data: AchievementCheckData) =>
+  Math.max(0, ...data.workouts.map((workout) => Array.isArray(workout.sets) ? workout.sets.length : 0));
+
+const hasGoalMultiple = (data: AchievementCheckData, multiple: number) =>
+  data.workouts.some((workout) => {
+    const goal = workout.dailyGoalAtTime || data.dailyGoal || 0;
+    return goal > 0 && workout.pushups >= goal * multiple;
+  });
+
+const hasPerfectGoalDays = (data: AchievementCheckData, days: number) =>
+  data.workouts.filter((workout) => workout.goalCompleted).length >= days;
+
+const hasEveryDayInMonth = (data: AchievementCheckData, monthIndex: number) => {
+  const byYear = new Map<number, Set<number>>();
+  data.workouts.forEach((workout) => {
+    const date = new Date(workout.date);
+    if (date.getMonth() !== monthIndex) return;
+    const days = byYear.get(date.getFullYear()) || new Set<number>();
+    days.add(date.getDate());
+    byYear.set(date.getFullYear(), days);
+  });
+
+  for (const [year, days] of byYear.entries()) {
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    if (days.size >= daysInMonth) return true;
+  }
+
+  return false;
+};
+
+const hasHolidayWorkout = (data: AchievementCheckData, month: number, day: number) =>
+  data.workouts.some((workout) => {
+    const date = new Date(workout.date);
+    return date.getMonth() === month && date.getDate() === day;
+  });
 
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   // STREAK ACHIEVEMENTS (30 total)
@@ -236,22 +279,22 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   { id: 'special_10000_workouts', title: 'Ten Thousand Sessions', description: 'Complete 10000 total workouts', type: 'special', requirement: 10000, icon: '🎗️', xpReward: 5000, coinReward: 1000, checkUnlock: (data) => data.workouts.length >= 10000 },
   { id: 'special_early_bird', title: 'Early Bird', description: 'Complete a workout before 6 AM', type: 'special', requirement: 'Before 6AM', icon: '🌅', xpReward: 50, coinReward: 10, checkUnlock: () => false },
   { id: 'special_night_owl', title: 'Night Owl', description: 'Complete a workout after 10 PM', type: 'special', requirement: 'After 10PM', icon: '🦉', xpReward: 50, coinReward: 10, checkUnlock: () => false },
-  { id: 'special_weekend_warrior', title: 'Weekend Warrior', description: 'Complete 10 weekend workouts', type: 'special', requirement: '10 weekends', icon: '🏖️', xpReward: 100, coinReward: 20, checkUnlock: () => false },
-  { id: 'special_monday_master', title: 'Monday Master', description: 'Complete 20 Monday workouts', type: 'special', requirement: '20 Mondays', icon: '📅', xpReward: 100, coinReward: 20, checkUnlock: () => false },
+  { id: 'special_weekend_warrior', title: 'Weekend Warrior', description: 'Complete 10 weekend workouts', type: 'special', requirement: '10 weekends', icon: '🏖️', xpReward: 100, coinReward: 20, checkUnlock: (data) => data.workouts.filter(w => [0, 6].includes(new Date(w.date).getDay())).length >= 10 },
+  { id: 'special_monday_master', title: 'Monday Master', description: 'Complete 20 Monday workouts', type: 'special', requirement: '20 Mondays', icon: '📅', xpReward: 100, coinReward: 20, checkUnlock: (data) => data.workouts.filter(w => new Date(w.date).getDay() === 1).length >= 20 },
   { id: 'special_all_variations_day', title: 'Variety Master', description: 'Do all 8 push-up types in one day', type: 'special', requirement: 'All 8 types', icon: '🌈', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_double_goal', title: 'Overachiever', description: 'Complete double your daily goal in one session', type: 'special', requirement: '2x goal', icon: '⚡', xpReward: 100, coinReward: 20, checkUnlock: () => false },
-  { id: 'special_triple_goal', title: 'Triple Threat', description: 'Complete triple your daily goal in one session', type: 'special', requirement: '3x goal', icon: '🔥', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_5x_goal', title: 'Quintupler', description: 'Complete 5x your daily goal in one session', type: 'special', requirement: '5x goal', icon: '💫', xpReward: 400, coinReward: 80, checkUnlock: () => false },
-  { id: 'special_10x_goal', title: 'Decupler', description: 'Complete 10x your daily goal in one session', type: 'special', requirement: '10x goal', icon: '⭐', xpReward: 800, coinReward: 160, checkUnlock: () => false },
-  { id: 'special_100_one_session', title: 'Century Session', description: 'Complete 100 push-ups in one session', type: 'special', requirement: 100, icon: '💯', xpReward: 100, coinReward: 20, checkUnlock: () => false },
-  { id: 'special_200_one_session', title: 'Double Century Session', description: 'Complete 200 push-ups in one session', type: 'special', requirement: 200, icon: '🎯', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_300_one_session', title: 'Triple Century Session', description: 'Complete 300 push-ups in one session', type: 'special', requirement: 300, icon: '🎪', xpReward: 300, coinReward: 60, checkUnlock: () => false },
-  { id: 'special_500_one_session', title: 'Five Hundred Session', description: 'Complete 500 push-ups in one session', type: 'special', requirement: 500, icon: '🎭', xpReward: 500, coinReward: 100, checkUnlock: () => false },
-  { id: 'special_1000_one_session', title: 'Thousand Session Titan', description: 'Complete 1000 push-ups in one session', type: 'special', requirement: 1000, icon: '👑', xpReward: 1000, coinReward: 200, checkUnlock: () => false },
-  { id: 'special_perfect_week', title: 'Perfect Week', description: 'Meet your goal every day for a week', type: 'special', requirement: '7 days', icon: '📆', xpReward: 150, coinReward: 30, checkUnlock: () => false },
-  { id: 'special_perfect_month', title: 'Perfect Month', description: 'Meet your goal every day for 30 days', type: 'special', requirement: '30 days', icon: '📅', xpReward: 500, coinReward: 100, checkUnlock: () => false },
-  { id: 'special_perfect_quarter', title: 'Perfect Quarter', description: 'Meet your goal every day for 90 days', type: 'special', requirement: '90 days', icon: '🗓️', xpReward: 1000, coinReward: 200, checkUnlock: () => false },
-  { id: 'special_perfect_year', title: 'Perfect Year', description: 'Meet your goal every day for 365 days', type: 'special', requirement: '365 days', icon: '📆', xpReward: 5000, coinReward: 1000, checkUnlock: () => false },
+  { id: 'special_double_goal', title: 'Overachiever', description: 'Complete double your daily goal in one session', type: 'special', requirement: '2x goal', icon: '⚡', xpReward: 100, coinReward: 20, checkUnlock: (data) => hasGoalMultiple(data, 2) },
+  { id: 'special_triple_goal', title: 'Triple Threat', description: 'Complete triple your daily goal in one session', type: 'special', requirement: '3x goal', icon: '🔥', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasGoalMultiple(data, 3) },
+  { id: 'special_5x_goal', title: 'Quintupler', description: 'Complete 5x your daily goal in one session', type: 'special', requirement: '5x goal', icon: '💫', xpReward: 400, coinReward: 80, checkUnlock: (data) => hasGoalMultiple(data, 5) },
+  { id: 'special_10x_goal', title: 'Decupler', description: 'Complete 10x your daily goal in one session', type: 'special', requirement: '10x goal', icon: '⭐', xpReward: 800, coinReward: 160, checkUnlock: (data) => hasGoalMultiple(data, 10) },
+  { id: 'special_100_one_session', title: 'Century Session', description: 'Complete 100 push-ups in one session', type: 'special', requirement: 100, icon: '💯', xpReward: 100, coinReward: 20, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 100 },
+  { id: 'special_200_one_session', title: 'Double Century Session', description: 'Complete 200 push-ups in one session', type: 'special', requirement: 200, icon: '🎯', xpReward: 200, coinReward: 40, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 200 },
+  { id: 'special_300_one_session', title: 'Triple Century Session', description: 'Complete 300 push-ups in one session', type: 'special', requirement: 300, icon: '🎪', xpReward: 300, coinReward: 60, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 300 },
+  { id: 'special_500_one_session', title: 'Five Hundred Session', description: 'Complete 500 push-ups in one session', type: 'special', requirement: 500, icon: '🎭', xpReward: 500, coinReward: 100, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 500 },
+  { id: 'special_1000_one_session', title: 'Thousand Session Titan', description: 'Complete 1000 push-ups in one session', type: 'special', requirement: 1000, icon: '👑', xpReward: 1000, coinReward: 200, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 1000 },
+  { id: 'special_perfect_week', title: 'Perfect Week', description: 'Meet your goal every day for a week', type: 'special', requirement: '7 days', icon: '📆', xpReward: 150, coinReward: 30, checkUnlock: (data) => hasPerfectGoalDays(data, 7) },
+  { id: 'special_perfect_month', title: 'Perfect Month', description: 'Meet your goal every day for 30 days', type: 'special', requirement: '30 days', icon: '📅', xpReward: 500, coinReward: 100, checkUnlock: (data) => hasPerfectGoalDays(data, 30) },
+  { id: 'special_perfect_quarter', title: 'Perfect Quarter', description: 'Meet your goal every day for 90 days', type: 'special', requirement: '90 days', icon: '🗓️', xpReward: 1000, coinReward: 200, checkUnlock: (data) => hasPerfectGoalDays(data, 90) },
+  { id: 'special_perfect_year', title: 'Perfect Year', description: 'Meet your goal every day for 365 days', type: 'special', requirement: '365 days', icon: '📆', xpReward: 5000, coinReward: 1000, checkUnlock: (data) => hasPerfectGoalDays(data, 365) },
   { id: 'special_speed_demon_10', title: 'Speedster 10', description: 'Complete 10 push-ups in under 10 seconds', type: 'special', requirement: '<10s', icon: '⏱️', xpReward: 50, coinReward: 10, checkUnlock: () => false },
   { id: 'special_speed_demon_25', title: 'Speedster 25', description: 'Complete 25 push-ups in under 25 seconds', type: 'special', requirement: '<25s', icon: '⏲️', xpReward: 100, coinReward: 20, checkUnlock: () => false },
   { id: 'special_speed_demon_50', title: 'Speedster 50', description: 'Complete 50 push-ups in under 50 seconds', type: 'special', requirement: '<50s', icon: '⏰', xpReward: 200, coinReward: 40, checkUnlock: () => false },
@@ -260,28 +303,28 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   { id: 'special_endurance_100', title: 'Endurance 100', description: 'Complete 100 push-ups without rest', type: 'special', requirement: 'No rest', icon: '🏃‍♂️', xpReward: 300, coinReward: 60, checkUnlock: () => false },
   { id: 'special_endurance_200', title: 'Endurance 200', description: 'Complete 200 push-ups without rest', type: 'special', requirement: 'No rest', icon: '🏃‍♀️', xpReward: 600, coinReward: 120, checkUnlock: () => false },
   { id: 'special_endurance_500', title: 'Endurance 500', description: 'Complete 500 push-ups without rest', type: 'special', requirement: 'No rest', icon: '🚴', xpReward: 1500, coinReward: 300, checkUnlock: () => false },
-  { id: 'special_10_sets', title: 'Set Master', description: 'Complete 10 sets in one session', type: 'special', requirement: '10 sets', icon: '🔟', xpReward: 100, coinReward: 20, checkUnlock: () => false },
-  { id: 'special_20_sets', title: 'Set Legend', description: 'Complete 20 sets in one session', type: 'special', requirement: '20 sets', icon: '2️⃣', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_30_sets', title: 'Set God', description: 'Complete 30 sets in one session', type: 'special', requirement: '30 sets', icon: '3️⃣', xpReward: 400, coinReward: 80, checkUnlock: () => false },
-  { id: 'special_50_sets', title: 'Set Supreme', description: 'Complete 50 sets in one session', type: 'special', requirement: '50 sets', icon: '5️⃣', xpReward: 800, coinReward: 160, checkUnlock: () => false },
-  { id: 'special_jan_complete', title: 'January Warrior', description: 'Complete every day in January', type: 'special', requirement: 'All January', icon: '❄️', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_feb_complete', title: 'February Champion', description: 'Complete every day in February', type: 'special', requirement: 'All February', icon: '💝', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_mar_complete', title: 'March Master', description: 'Complete every day in March', type: 'special', requirement: 'All March', icon: '🍀', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_apr_complete', title: 'April Ace', description: 'Complete every day in April', type: 'special', requirement: 'All April', icon: '🌸', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_may_complete', title: 'May Magnificent', description: 'Complete every day in May', type: 'special', requirement: 'All May', icon: '🌺', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_jun_complete', title: 'June Juggernaut', description: 'Complete every day in June', type: 'special', requirement: 'All June', icon: '☀️', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_jul_complete', title: 'July Hero', description: 'Complete every day in July', type: 'special', requirement: 'All July', icon: '🎆', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_aug_complete', title: 'August Champion', description: 'Complete every day in August', type: 'special', requirement: 'All August', icon: '🏖️', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_sep_complete', title: 'September Soldier', description: 'Complete every day in September', type: 'special', requirement: 'All September', icon: '🍂', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_oct_complete', title: 'October Legend', description: 'Complete every day in October', type: 'special', requirement: 'All October', icon: '🎃', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_nov_complete', title: 'November Victor', description: 'Complete every day in November', type: 'special', requirement: 'All November', icon: '🦃', xpReward: 200, coinReward: 40, checkUnlock: () => false },
-  { id: 'special_dec_complete', title: 'December Dominator', description: 'Complete every day in December', type: 'special', requirement: 'All December', icon: '🎄', xpReward: 200, coinReward: 40, checkUnlock: () => false },
+  { id: 'special_10_sets', title: 'Set Master', description: 'Complete 10 sets in one session', type: 'special', requirement: '10 sets', icon: '🔟', xpReward: 100, coinReward: 20, checkUnlock: (data) => getBestSetCount(data) >= 10 },
+  { id: 'special_20_sets', title: 'Set Legend', description: 'Complete 20 sets in one session', type: 'special', requirement: '20 sets', icon: '2️⃣', xpReward: 200, coinReward: 40, checkUnlock: (data) => getBestSetCount(data) >= 20 },
+  { id: 'special_30_sets', title: 'Set God', description: 'Complete 30 sets in one session', type: 'special', requirement: '30 sets', icon: '3️⃣', xpReward: 400, coinReward: 80, checkUnlock: (data) => getBestSetCount(data) >= 30 },
+  { id: 'special_50_sets', title: 'Set Supreme', description: 'Complete 50 sets in one session', type: 'special', requirement: '50 sets', icon: '5️⃣', xpReward: 800, coinReward: 160, checkUnlock: (data) => getBestSetCount(data) >= 50 },
+  { id: 'special_jan_complete', title: 'January Warrior', description: 'Complete every day in January', type: 'special', requirement: 'All January', icon: '❄️', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 0) },
+  { id: 'special_feb_complete', title: 'February Champion', description: 'Complete every day in February', type: 'special', requirement: 'All February', icon: '💝', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 1) },
+  { id: 'special_mar_complete', title: 'March Master', description: 'Complete every day in March', type: 'special', requirement: 'All March', icon: '🍀', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 2) },
+  { id: 'special_apr_complete', title: 'April Ace', description: 'Complete every day in April', type: 'special', requirement: 'All April', icon: '🌸', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 3) },
+  { id: 'special_may_complete', title: 'May Magnificent', description: 'Complete every day in May', type: 'special', requirement: 'All May', icon: '🌺', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 4) },
+  { id: 'special_jun_complete', title: 'June Juggernaut', description: 'Complete every day in June', type: 'special', requirement: 'All June', icon: '☀️', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 5) },
+  { id: 'special_jul_complete', title: 'July Hero', description: 'Complete every day in July', type: 'special', requirement: 'All July', icon: '🎆', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 6) },
+  { id: 'special_aug_complete', title: 'August Champion', description: 'Complete every day in August', type: 'special', requirement: 'All August', icon: '🏖️', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 7) },
+  { id: 'special_sep_complete', title: 'September Soldier', description: 'Complete every day in September', type: 'special', requirement: 'All September', icon: '🍂', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 8) },
+  { id: 'special_oct_complete', title: 'October Legend', description: 'Complete every day in October', type: 'special', requirement: 'All October', icon: '🎃', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 9) },
+  { id: 'special_nov_complete', title: 'November Victor', description: 'Complete every day in November', type: 'special', requirement: 'All November', icon: '🦃', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 10) },
+  { id: 'special_dec_complete', title: 'December Dominator', description: 'Complete every day in December', type: 'special', requirement: 'All December', icon: '🎄', xpReward: 200, coinReward: 40, checkUnlock: (data) => hasEveryDayInMonth(data, 11) },
   { id: 'special_all_months', title: 'Complete Calendar', description: 'Complete every month perfectly once', type: 'special', requirement: 'All 12 months', icon: '📆', xpReward: 3000, coinReward: 600, checkUnlock: () => false },
   { id: 'special_birthday', title: 'Birthday Bonus', description: 'Complete a workout on your birthday', type: 'special', requirement: 'Birthday', icon: '🎂', xpReward: 100, coinReward: 20, checkUnlock: () => false },
-  { id: 'special_new_year', title: 'New Year New You', description: 'Complete a workout on New Year\'s Day', type: 'special', requirement: 'Jan 1', icon: '🎆', xpReward: 150, coinReward: 30, checkUnlock: () => false },
-  { id: 'special_valentine', title: 'Love The Grind', description: 'Complete a workout on Valentine\'s Day', type: 'special', requirement: 'Feb 14', icon: '💝', xpReward: 50, coinReward: 10, checkUnlock: () => false },
-  { id: 'special_halloween', title: 'Spooky Session', description: 'Complete a workout on Halloween', type: 'special', requirement: 'Oct 31', icon: '🎃', xpReward: 50, coinReward: 10, checkUnlock: () => false },
-  { id: 'special_christmas', title: 'Christmas Commitment', description: 'Complete a workout on Christmas', type: 'special', requirement: 'Dec 25', icon: '🎄', xpReward: 100, coinReward: 20, checkUnlock: () => false },
+  { id: 'special_new_year', title: 'New Year New You', description: 'Complete a workout on New Year\'s Day', type: 'special', requirement: 'Jan 1', icon: '🎆', xpReward: 150, coinReward: 30, checkUnlock: (data) => hasHolidayWorkout(data, 0, 1) },
+  { id: 'special_valentine', title: 'Love The Grind', description: 'Complete a workout on Valentine\'s Day', type: 'special', requirement: 'Feb 14', icon: '💝', xpReward: 50, coinReward: 10, checkUnlock: (data) => hasHolidayWorkout(data, 1, 14) },
+  { id: 'special_halloween', title: 'Spooky Session', description: 'Complete a workout on Halloween', type: 'special', requirement: 'Oct 31', icon: '🎃', xpReward: 50, coinReward: 10, checkUnlock: (data) => hasHolidayWorkout(data, 9, 31) },
+  { id: 'special_christmas', title: 'Christmas Commitment', description: 'Complete a workout on Christmas', type: 'special', requirement: 'Dec 25', icon: '🎄', xpReward: 100, coinReward: 20, checkUnlock: (data) => hasHolidayWorkout(data, 11, 25) },
   { id: 'special_thanksgiving', title: 'Thankful For Fitness', description: 'Complete a workout on Thanksgiving', type: 'special', requirement: 'Thanksgiving', icon: '🦃', xpReward: 50, coinReward: 10, checkUnlock: () => false },
   { id: 'special_all_holidays', title: 'Holiday Hero', description: 'Complete workouts on 10 different holidays', type: 'special', requirement: '10 holidays', icon: '🎊', xpReward: 500, coinReward: 100, checkUnlock: () => false },
   { id: 'special_rain_shine', title: 'Rain Or Shine', description: 'Complete workouts in different weather conditions', type: 'special', requirement: 'Various weather', icon: '🌦️', xpReward: 100, coinReward: 20, checkUnlock: () => false },
@@ -289,14 +332,14 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   { id: 'special_dawn_to_dusk', title: 'Dawn To Dusk', description: 'Complete workouts at all times of day', type: 'special', requirement: 'All times', icon: '🌍', xpReward: 300, coinReward: 60, checkUnlock: () => false },
   { id: 'special_sick_day_warrior', title: 'Sick Day Warrior', description: 'Complete a workout when under the weather', type: 'special', requirement: 'While sick', icon: '🤧', xpReward: 100, coinReward: 20, checkUnlock: () => false },
   { id: 'special_injured_hero', title: 'Modified Master', description: 'Complete modified push-ups while injured', type: 'special', requirement: 'While injured', icon: '🩹', xpReward: 150, coinReward: 30, checkUnlock: () => false },
-  { id: 'special_recovery_king', title: 'Recovery King', description: 'Return after 30+ day break', type: 'special', requirement: 'After 30 days', icon: '🔄', xpReward: 200, coinReward: 40, checkUnlock: () => false },
+  { id: 'special_recovery_king', title: 'Recovery King', description: 'Return after 30+ day break', type: 'special', requirement: 'After 30 days', icon: '🔄', xpReward: 200, coinReward: 40, checkUnlock: (data) => data.workouts.some((workout, index, workouts) => index > 0 && (new Date(workout.date).getTime() - new Date(workouts[index - 1].date).getTime()) / 86400000 >= 30) },
   { id: 'special_consistency_god', title: 'Consistency Icon', description: 'Never miss more than 1 day in a row for 365 days', type: 'special', requirement: '365 days', icon: '⚖️', xpReward: 2000, coinReward: 400, checkUnlock: () => false },
-  { id: 'special_volume_day_500', title: 'Volume Day 500', description: 'Complete 500 push-ups in a single day', type: 'special', requirement: '500 in day', icon: '📊', xpReward: 300, coinReward: 60, checkUnlock: () => false },
-  { id: 'special_volume_day_1000', title: 'Volume Day 1000', description: 'Complete 1000 push-ups in a single day', type: 'special', requirement: '1000 in day', icon: '📈', xpReward: 600, coinReward: 120, checkUnlock: () => false },
-  { id: 'special_volume_day_2000', title: 'Volume Day 2000', description: 'Complete 2000 push-ups in a single day', type: 'special', requirement: '2000 in day', icon: '📉', xpReward: 1200, coinReward: 240, checkUnlock: () => false },
-  { id: 'special_volume_day_3000', title: 'Volume Day 3000', description: 'Complete 3000 push-ups in a single day', type: 'special', requirement: '3000 in day', icon: '📐', xpReward: 2000, coinReward: 400, checkUnlock: () => false },
+  { id: 'special_volume_day_500', title: 'Volume Day 500', description: 'Complete 500 push-ups in a single day', type: 'special', requirement: '500 in day', icon: '📊', xpReward: 300, coinReward: 60, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 500 },
+  { id: 'special_volume_day_1000', title: 'Volume Day 1000', description: 'Complete 1000 push-ups in a single day', type: 'special', requirement: '1000 in day', icon: '📈', xpReward: 600, coinReward: 120, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 1000 },
+  { id: 'special_volume_day_2000', title: 'Volume Day 2000', description: 'Complete 2000 push-ups in a single day', type: 'special', requirement: '2000 in day', icon: '📉', xpReward: 1200, coinReward: 240, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 2000 },
+  { id: 'special_volume_day_3000', title: 'Volume Day 3000', description: 'Complete 3000 push-ups in a single day', type: 'special', requirement: '3000 in day', icon: '📐', xpReward: 2000, coinReward: 400, checkUnlock: (data) => (getBestWorkout(data)?.pushups || 0) >= 3000 },
   { id: 'special_variety_god', title: 'Variety Master', description: 'Complete 1000 reps of each push-up type', type: 'special', requirement: 'All 1000', icon: '🌈', xpReward: 2000, coinReward: 400, checkUnlock: (data) => Object.values(data.variationStats).every(v => v >= 1000) },
-  { id: 'special_balanced_master', title: 'Balanced Master', description: 'Keep all variation stats within 500 of each other', type: 'special', requirement: 'Balanced', icon: '⚖️', xpReward: 500, coinReward: 100, checkUnlock: () => false },
+  { id: 'special_balanced_master', title: 'Balanced Master', description: 'Keep all variation stats within 500 of each other', type: 'special', requirement: 'Balanced', icon: '⚖️', xpReward: 500, coinReward: 100, checkUnlock: (data) => { const values = Object.values(data.variationStats).filter(value => value > 0); return values.length >= 8 && Math.max(...values) - Math.min(...values) <= 500; } },
   { id: 'special_ultimate_legend', title: 'Ultimate Legend', description: 'Unlock 200 other achievements', type: 'special', requirement: '200 achievements', icon: '🏆', xpReward: 10000, coinReward: 2000, checkUnlock: () => false },
   { id: 'special_completionist', title: 'Completionist', description: 'Unlock all other achievements', type: 'special', requirement: 'All achievements', icon: '👑', xpReward: 50000, coinReward: 10000, checkUnlock: () => false },
 ];

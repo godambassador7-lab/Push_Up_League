@@ -11,7 +11,7 @@ import {
   getTrackById,
   generateSessionId,
 } from '@/lib/ironMode';
-import { Play, Pause, Plus, Check, X } from 'lucide-react';
+import { Play, Pause, Plus, Check, X, Volume2, Smartphone, SkipForward } from 'lucide-react';
 import { PushUpType, PUSHUP_TYPES } from '@/lib/pushupTypes';
 
 interface IronModeSessionProps {
@@ -58,6 +58,8 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   const [extraRestSeconds, setExtraRestSeconds] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [restSoundEnabled, setRestSoundEnabled] = useState(true);
+  const [restVibrationEnabled, setRestVibrationEnabled] = useState(true);
 
   // Music state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -68,7 +70,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   const currentTrack = config.trackId ? getTrackById(config.trackId) : undefined;
 
   const playRestAlarm = useCallback(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !restSoundEnabled) return;
 
     const alarmAudio = restAlarmRef.current ?? new Audio(REST_ALARM_URL);
     restAlarmRef.current = alarmAudio;
@@ -92,7 +94,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
     alarmAudio.onended = playNext;
     playNext();
-  }, []);
+  }, [restSoundEnabled]);
 
   useEffect(() => {
     return () => {
@@ -132,8 +134,14 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
     restCompletionHandledRef.current = true;
     playRestAlarm();
+    if (restVibrationEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([250, 150, 250, 150, 250]);
+    }
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification('Rest complete', { body: 'Next set is ready.' });
+    }
     setIsResting(false);
-  }, [isResting, restTime, activeRestDuration, playRestAlarm]);
+  }, [isResting, restTime, activeRestDuration, playRestAlarm, restVibrationEnabled]);
 
   // Music auto-play
   useEffect(() => {
@@ -198,6 +206,16 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   };
 
   const nextRestDuration = Math.min(300, config.restDuration + extraRestSeconds);
+
+  const addActiveRestSeconds = (seconds: number) => {
+    setActiveRestDuration((duration) => Math.min(300, duration + seconds));
+  };
+
+  const skipRest = () => {
+    restCompletionHandledRef.current = true;
+    setIsResting(false);
+    setRestTime(activeRestDuration);
+  };
 
   const completeSet = () => {
     const setLog: SetLog = {
@@ -346,6 +364,62 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
                   className="h-full bg-accent transition-all duration-1000"
                   style={{ width: `${(restTime / activeRestDuration) * 100}%` }}
                 />
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => addActiveRestSeconds(15)}
+                  className="flex min-h-10 items-center justify-center gap-1 rounded-lg border border-dark-border px-2 text-xs font-bold text-gray-300 transition hover:border-accent hover:text-accent"
+                  title="Add 15 seconds"
+                >
+                  <Plus size={14} />
+                  15s
+                </button>
+                <button
+                  type="button"
+                  onClick={skipRest}
+                  className="flex min-h-10 items-center justify-center gap-1 rounded-lg border border-dark-border px-2 text-xs font-bold text-gray-300 transition hover:border-warning hover:text-warning"
+                  title="Skip rest"
+                >
+                  <SkipForward size={14} />
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+                      void Notification.requestPermission();
+                    }
+                  }}
+                  className="min-h-10 rounded-lg border border-dark-border px-2 text-xs font-bold text-gray-300 transition hover:border-electric-blue hover:text-electric-blue"
+                  title="Enable browser notification permission"
+                >
+                  Notify
+                </button>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRestSoundEnabled((enabled) => !enabled)}
+                  className={`flex min-h-10 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-bold transition ${
+                    restSoundEnabled ? 'border-accent text-accent' : 'border-dark-border text-gray-500'
+                  }`}
+                  title="Toggle rest alarm sound"
+                >
+                  <Volume2 size={14} />
+                  Sound
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRestVibrationEnabled((enabled) => !enabled)}
+                  className={`flex min-h-10 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-bold transition ${
+                    restVibrationEnabled ? 'border-accent text-accent' : 'border-dark-border text-gray-500'
+                  }`}
+                  title="Toggle vibration"
+                >
+                  <Smartphone size={14} />
+                  Vibrate
+                </button>
               </div>
             </div>
           </div>

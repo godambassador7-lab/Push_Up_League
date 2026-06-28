@@ -114,6 +114,12 @@ export interface FirestoreUser {
   personalBest: number;
   dailyGoal: number;
   dailyGoalLastAdjustedDate?: string | null;
+  recommendedDailyGoal?: number;
+  customDailyGoal?: number | null;
+  goalAdjustmentMode?: string;
+  lastGoalAdjustment?: any;
+  recoveryModeUntil?: string | null;
+  recoveryReductionPercent?: number;
   streakFreezes: number;
   bodyWeightKg?: number;
   waiverAccepted?: boolean;
@@ -131,6 +137,9 @@ export interface FirestoreWorkout {
   xpEarned: number;
   coinsEarned?: number;
   goalCompleted?: boolean;
+  dailyGoalAtTime?: number;
+  quality?: any;
+  sessionDuration?: number;
   streakMultiplier: number;
   challengeBonus: boolean;
   isLocked: boolean;

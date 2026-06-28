@@ -50,6 +50,9 @@ export const IronMode = ({ onExit }: IronModeProps) => {
           reps: set.actualReps,
           type,
           restAfter: set.restAfter,
+          targetReps: set.targetReps,
+          difficulty: set.difficulty,
+          completedAt: set.timestamp,
         };
       });
 

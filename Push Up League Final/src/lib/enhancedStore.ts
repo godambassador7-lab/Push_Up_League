@@ -11,6 +11,29 @@ export interface WorkoutSet {
   reps: number;
   type: PushUpType;
   restAfter?: number; // seconds
+  targetReps?: number;
+  difficulty?: 'easy' | 'okay' | 'hard';
+  completedAt?: number;
+}
+
+export type GoalAdjustmentMode = 'conservative' | 'balanced' | 'aggressive';
+
+export interface GoalAdjustment {
+  date: string;
+  previousGoal: number;
+  nextGoal: number;
+  recommendedGoal: number;
+  reason: string;
+}
+
+export interface WorkoutQuality {
+  totalSets: number;
+  completedSets: number;
+  failedSets: number;
+  hardSets: number;
+  easySets: number;
+  completionRate: number;
+  averageRestSeconds?: number;
 }
 
 export interface Workout {
@@ -25,6 +48,8 @@ export interface Workout {
   isLocked: boolean;
   lockedAt?: string;
   goalCompleted: boolean;
+  dailyGoalAtTime: number;
+  quality?: WorkoutQuality;
   sessionDuration?: number; // minutes
 }
 
@@ -130,6 +155,12 @@ export interface UserState {
   // Goals & Records
   dailyGoal: number;
   dailyGoalLastAdjustedDate: string | null;
+  recommendedDailyGoal: number;
+  customDailyGoal: number | null;
+  goalAdjustmentMode: GoalAdjustmentMode;
+  lastGoalAdjustment: GoalAdjustment | null;
+  recoveryModeUntil: string | null;
+  recoveryReductionPercent: number;
   personalBest: number;
   variationPBs: Record<PushUpType, number>;
 
@@ -163,6 +194,18 @@ export interface UserState {
   getStreakStatus: () => { days: number; broken: boolean };
   addAchievement: (title: string, description: string, type: Achievement['type']) => void;
   updateDailyGoal: () => void;
+  setGoalAdjustmentMode: (mode: GoalAdjustmentMode) => void;
+  setCustomDailyGoal: (goal: number | null) => void;
+  activateRecoveryMode: (days: number, reductionPercent?: number) => void;
+  clearRecoveryMode: () => void;
+  getWeeklyReview: () => {
+    totalPushups: number;
+    bestDay: Workout | null;
+    goalCompletionRate: number;
+    consistencyScore: number;
+    suggestedTarget: number;
+    recommendation: string;
+  };
   setBodyWeight: (weightKg: number) => void;
 }
 
@@ -186,6 +229,46 @@ const getMissedDayPenalty = (missedDays: number) => {
   return {
     xpPenalty: 2 * multiplier,
     coinPenalty: 1 * multiplier,
+  };
+};
+
+const getRecoveryModeActive = (state: Pick<UserState, 'recoveryModeUntil'>) => {
+  if (!state.recoveryModeUntil) return false;
+  const today = new Date().toISOString().split('T')[0];
+  return state.recoveryModeUntil >= today;
+};
+
+const calculateWorkoutQuality = (
+  workoutSets: WorkoutSet[] | undefined,
+  pushups: number
+): WorkoutQuality | undefined => {
+  if (!workoutSets || workoutSets.length === 0) {
+    return {
+      totalSets: pushups > 0 ? 1 : 0,
+      completedSets: pushups > 0 ? 1 : 0,
+      failedSets: 0,
+      hardSets: 0,
+      easySets: 0,
+      completionRate: pushups > 0 ? 1 : 0,
+    };
+  }
+
+  const totalSets = workoutSets.length;
+  const completedSets = workoutSets.filter((set) => !set.targetReps || set.reps >= set.targetReps).length;
+  const restValues = workoutSets
+    .map((set) => set.restAfter)
+    .filter((value): value is number => typeof value === 'number');
+
+  return {
+    totalSets,
+    completedSets,
+    failedSets: totalSets - completedSets,
+    hardSets: workoutSets.filter((set) => set.difficulty === 'hard').length,
+    easySets: workoutSets.filter((set) => set.difficulty === 'easy').length,
+    completionRate: totalSets > 0 ? completedSets / totalSets : 0,
+    averageRestSeconds: restValues.length > 0
+      ? Math.round(restValues.reduce((sum, value) => sum + value, 0) / restValues.length)
+      : undefined,
   };
 };
 
@@ -223,6 +306,12 @@ const getInitialState = () => ({
   variationStats: getVariationDefaults(),
   dailyGoal: 50,
   dailyGoalLastAdjustedDate: null,
+  recommendedDailyGoal: 50,
+  customDailyGoal: null,
+  goalAdjustmentMode: 'balanced' as GoalAdjustmentMode,
+  lastGoalAdjustment: null,
+  recoveryModeUntil: null,
+  recoveryReductionPercent: 25,
   personalBest: 0,
   variationPBs: getVariationDefaults(),
   bodyWeightKg: 77, // Default: 77kg (~170lbs)
@@ -397,9 +486,11 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       baseCoins = Math.floor(baseCoins * avgCoinMult);
     }
 
+    const dailyGoalAtTime = existingWorkout?.dailyGoalAtTime || state.dailyGoal;
+
     // Check if daily goal completed
     const totalPushupsToday = (existingWorkout?.pushups || 0) + pushups;
-    const goalCompleted = totalPushupsToday >= state.dailyGoal;
+    const goalCompleted = totalPushupsToday >= dailyGoalAtTime;
 
     // Add goal completion bonus
     if (goalCompleted && (!existingWorkout || !existingWorkout.goalCompleted)) {
@@ -448,6 +539,11 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
     // Update or create workout
     let updatedWorkouts = [...state.workouts];
+    const combinedSets = existingWorkout && workoutSets
+      ? [...(existingWorkout.sets || []), ...workoutSets]
+      : workoutSets || existingWorkout?.sets;
+    const quality = calculateWorkoutQuality(combinedSets, totalPushupsToday);
+
     if (existingWorkout) {
       // Update existing
       updatedWorkouts = updatedWorkouts.map(w =>
@@ -459,6 +555,8 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
               xpEarned: w.xpEarned + finalXPEarned,
               coinsEarned: w.coinsEarned + coinsEarned,
               goalCompleted: goalCompleted || w.goalCompleted,
+              dailyGoalAtTime,
+              quality,
               sessionDuration: sessionDuration || w.sessionDuration,
             }
           : w
@@ -476,6 +574,8 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
         challengeBonus: challengeBonus || false,
         isLocked: false,
         goalCompleted,
+        dailyGoalAtTime,
+        quality,
         sessionDuration,
       };
       updatedWorkouts.push(newWorkout);
@@ -496,8 +596,12 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       usedStreakFreeze: state.streakFreezes < 1, // If they have less than starting amount
     };
 
-    const unlockedIds = state.achievements.map(a => a.id);
+    const unlockedIds = Array.from(new Set([
+      ...state.achievements.map(a => a.id),
+      ...state.unlockedAchievements,
+    ]));
     const newAchievements = checkAchievements(achievementCheckData, unlockedIds);
+    const newAchievementIds = newAchievements.map(def => def.id);
 
     const achievements = [
       ...state.achievements,
@@ -520,11 +624,15 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       lastWorkoutDate: today,
       workouts: updatedWorkouts,
       achievements,
+      unlockedAchievements: [...state.unlockedAchievements, ...newAchievementIds],
+      achievementToasts: [...state.achievementToasts, ...newAchievementIds],
       personalBest: newPersonalBest,
       totalLifetimePushups: state.totalLifetimePushups + pushups,
       variationStats: newVariationStats,
       variationPBs: newVariationPBs,
     });
+
+    const goalBeforeAdjustment = get().dailyGoal;
 
     // Update daily goal once per workout day based on the user's recent pattern.
     get().updateDailyGoal();
@@ -546,6 +654,13 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     // Add daily bonus message if active
     if (dailyBonus.active) {
       successMessage += ` ${dailyBonus.message}`;
+    }
+
+    const adjustment = get().lastGoalAdjustment;
+    if (adjustment && adjustment.date === today && adjustment.previousGoal !== adjustment.nextGoal) {
+      successMessage += ` Daily goal adjusted from ${adjustment.previousGoal} to ${adjustment.nextGoal}.`;
+    } else if (goalBeforeAdjustment !== get().dailyGoal) {
+      successMessage += ` Daily goal adjusted to ${get().dailyGoal}.`;
     }
 
     return {
@@ -722,6 +837,8 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       variationStats: state.variationStats,
       workouts: state.workouts,
       totalGoalsCompleted: state.workouts.filter(w => w.goalCompleted).length,
+      dailyGoal: state.dailyGoal,
+      personalBest: state.personalBest,
     };
 
     const newAchievements = checkAchievements(achievementCheckData, state.unlockedAchievements);
@@ -826,7 +943,8 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     const workoutHistory = state.workouts.map(w => ({
       date: w.date,
       pushups: w.pushups,
-      goalCompleted: w.goalCompleted
+      goalCompleted: w.goalCompleted,
+      dailyGoalAtTime: w.dailyGoalAtTime,
     }));
     const sortedWorkouts = [...state.workouts].sort((a, b) => a.date.localeCompare(b.date));
     const latestWorkout = sortedWorkouts[sortedWorkouts.length - 1];
@@ -837,20 +955,119 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     const shouldAdjustFromBehavior = Boolean(
       latestWorkout && state.dailyGoalLastAdjustedDate !== latestWorkout.date
     );
-    const goal = calculateDailyGoal(
+    const recoveryActive = getRecoveryModeActive(state);
+    const recommendedGoal = calculateDailyGoal(
       state.proficiency,
       state.currentStreak,
       state.personalBest,
       shouldAdjustFromBehavior ? workoutHistory : [],
-      shouldAdjustFromBehavior ? state.dailyGoal : undefined
+      shouldAdjustFromBehavior ? state.dailyGoal : undefined,
+      state.goalAdjustmentMode,
+      recoveryActive ? state.recoveryReductionPercent : 0
     );
+    const goal = state.customDailyGoal || recommendedGoal;
+
+    let reason = 'Baseline goal updated from profile and training history.';
+    if (latestWorkout && shouldAdjustFromBehavior) {
+      const target = latestWorkout.dailyGoalAtTime || state.dailyGoal;
+      if (latestWorkout.pushups >= target) {
+        reason = latestWorkout.pushups > target
+          ? `Goal increased because ${latestWorkout.pushups} reps beat the ${target} target.`
+          : `Goal increased slightly after meeting the ${target} target.`;
+      } else {
+        reason = `Goal lowered because ${latestWorkout.pushups} reps missed the ${target} target.`;
+      }
+    }
+    if (state.customDailyGoal) {
+      reason = `Custom goal is active. Suggested adaptive goal is ${recommendedGoal}.`;
+    } else if (recoveryActive) {
+      reason += ' Recovery mode is temporarily reducing the target.';
+    }
 
     set({
       dailyGoal: goal,
+      recommendedDailyGoal: recommendedGoal,
       dailyGoalLastAdjustedDate: shouldAdjustFromBehavior
         ? latestWorkout!.date
         : state.dailyGoalLastAdjustedDate,
+      lastGoalAdjustment: {
+        date: shouldAdjustFromBehavior && latestWorkout ? latestWorkout.date : new Date().toISOString().split('T')[0],
+        previousGoal: state.dailyGoal,
+        nextGoal: goal,
+        recommendedGoal,
+        reason,
+      },
     });
+  },
+
+  setGoalAdjustmentMode: (mode: GoalAdjustmentMode) => {
+    set({ goalAdjustmentMode: mode, dailyGoalLastAdjustedDate: null });
+    get().updateDailyGoal();
+  },
+
+  setCustomDailyGoal: (goal: number | null) => {
+    const sanitizedGoal = goal ? Math.max(5, Math.round(goal / 5) * 5) : null;
+    set({ customDailyGoal: sanitizedGoal, dailyGoalLastAdjustedDate: null });
+    get().updateDailyGoal();
+  },
+
+  activateRecoveryMode: (days: number, reductionPercent = 25) => {
+    const until = new Date();
+    until.setDate(until.getDate() + Math.max(1, days) - 1);
+    set({
+      recoveryModeUntil: until.toISOString().split('T')[0],
+      recoveryReductionPercent: Math.max(10, Math.min(60, reductionPercent)),
+      dailyGoalLastAdjustedDate: null,
+    });
+    get().updateDailyGoal();
+  },
+
+  clearRecoveryMode: () => {
+    set({ recoveryModeUntil: null, dailyGoalLastAdjustedDate: null });
+    get().updateDailyGoal();
+  },
+
+  getWeeklyReview: () => {
+    const state = get();
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - 6);
+    const recentWorkouts = state.workouts.filter((workout) => {
+      const date = new Date(workout.date);
+      return date >= weekStart && date <= today;
+    });
+    const totalPushups = recentWorkouts.reduce((sum, workout) => sum + workout.pushups, 0);
+    const bestDay = recentWorkouts.reduce<Workout | null>(
+      (best, workout) => (!best || workout.pushups > best.pushups ? workout : best),
+      null
+    );
+    const goalCompletionRate = recentWorkouts.length > 0
+      ? Math.round((recentWorkouts.filter((workout) => workout.goalCompleted).length / recentWorkouts.length) * 100)
+      : 0;
+    const consistencyScore = Math.round((recentWorkouts.length / 7) * 100);
+    const suggestedTarget = state.customDailyGoal || state.recommendedDailyGoal || state.dailyGoal;
+    const avgQuality = recentWorkouts
+      .map((workout) => workout.quality?.completionRate)
+      .filter((value): value is number => typeof value === 'number');
+    const qualityRate = avgQuality.length > 0
+      ? avgQuality.reduce((sum, value) => sum + value, 0) / avgQuality.length
+      : 1;
+
+    let recommendation = 'Hold your current target and focus on consistency.';
+    if (goalCompletionRate >= 80 && qualityRate >= 0.9) {
+      recommendation = 'Progress next week: add reps, harder variations, or slightly shorter rest.';
+    } else if (goalCompletionRate < 50 || qualityRate < 0.75 || getRecoveryModeActive(state)) {
+      recommendation = 'Deload next week: keep cleaner sets, more rest, and a lower target.';
+    }
+
+    return {
+      totalPushups,
+      bestDay,
+      goalCompletionRate,
+      consistencyScore,
+      suggestedTarget,
+      recommendation,
+    };
   },
 
   setBodyWeight: (weightKg: number) => {
