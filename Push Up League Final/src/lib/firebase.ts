@@ -113,6 +113,7 @@ export interface FirestoreUser {
   lastWorkoutDate: string | null;
   personalBest: number;
   dailyGoal: number;
+  dailyGoalLastAdjustedDate?: string | null;
   streakFreezes: number;
   bodyWeightKg?: number;
   waiverAccepted?: boolean;

@@ -148,7 +148,8 @@ export function calculateDailyGoal(
   proficiency: ProficiencyLevel,
   currentStreak: number,
   personalBest: number,
-  workoutHistory?: { date: string; pushups: number; goalCompleted?: boolean }[]
+  workoutHistory?: { date: string; pushups: number; goalCompleted?: boolean }[],
+  currentDailyGoal?: number
 ): number {
   const profData = PROFICIENCY_LEVELS[proficiency];
   const baseGoal = profData.dailyCapacity.min;
@@ -161,7 +162,9 @@ export function calculateDailyGoal(
     return Math.min(goal, profData.dailyCapacity.max);
   }
 
-  // ADAPTIVE ALGORITHM: Analyze last 7 days of performance
+  // ADAPTIVE ALGORITHM: Move the actual current goal in small steps based on
+  // recent behavior. This lets high goals come down gradually and earned goals
+  // climb without jumping to a single-day spike.
   const today = new Date();
   const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -172,73 +175,46 @@ export function calculateDailyGoal(
     })
     .slice(-7);
 
-  // Calculate metrics for adaptive adjustment
-  let totalPushups = 0;
-  let goalsCompleted = 0;
-  let goalsMissed = 0;
-
-  recentWorkouts.forEach(w => {
-    totalPushups += w.pushups;
-    if (w.goalCompleted) {
-      goalsCompleted++;
-    } else {
-      goalsMissed++;
-    }
-  });
-
-  const avgDailyPerformance = recentWorkouts.length > 0
-    ? Math.floor(totalPushups / recentWorkouts.length)
-    : baseGoal;
-
-  // Calculate current goal (use baseGoal if no recent workouts)
-  let currentGoal = baseGoal;
-  if (recentWorkouts.length > 0 && recentWorkouts[0].goalCompleted !== undefined) {
-    // Try to infer current goal from recent performance
-    const maxRecentPushups = Math.max(...recentWorkouts.map(w => w.pushups));
-    currentGoal = Math.max(baseGoal, Math.min(maxRecentPushups, profData.dailyCapacity.max));
+  if (recentWorkouts.length === 0) {
+    return currentDailyGoal || baseGoal;
   }
 
-  // ADAPTIVE ADJUSTMENT LOGIC
+  const roundedToFive = (value: number) => Math.max(5, Math.round(value / 5) * 5);
+  const currentGoal = currentDailyGoal && currentDailyGoal > 0
+    ? currentDailyGoal
+    : Math.max(baseGoal, Math.min(personalBest || baseGoal, profData.dailyCapacity.max));
+  const latestWorkout = recentWorkouts[recentWorkouts.length - 1];
+  const goalsCompleted = recentWorkouts.filter(w => w.pushups >= currentGoal || w.goalCompleted).length;
+  const completionRate = goalsCompleted / recentWorkouts.length;
+
+  let adjustmentPercent = 0;
   let newGoal = currentGoal;
 
-  // Case 1: User consistently exceeds goal (5+ completions in last 7 days)
-  if (goalsCompleted >= 5 && recentWorkouts.length >= 5) {
-    // Increase goal by 15% of average performance above current goal
-    const avgExcess = avgDailyPerformance - currentGoal;
-    if (avgExcess > 0) {
-      newGoal = Math.floor(currentGoal + (avgExcess * 0.15));
-    } else {
-      newGoal = Math.floor(currentGoal * 1.1); // +10% if completing but not exceeding much
+  if (latestWorkout.pushups >= currentGoal) {
+    const exceedRatio = (latestWorkout.pushups - currentGoal) / currentGoal;
+    adjustmentPercent = exceedRatio >= 0.25 ? 0.08 : 0.04;
+    if (recentWorkouts.length >= 3 && completionRate >= 0.75) {
+      adjustmentPercent += 0.03;
     }
-  }
-  // Case 2: User consistently misses goal (5+ misses in last 7 days)
-  else if (goalsMissed >= 5 && recentWorkouts.length >= 5) {
-    // Decrease goal to 90% of average daily performance
-    newGoal = Math.floor(avgDailyPerformance * 0.9);
-  }
-  // Case 3: Mixed performance - adjust gradually toward average
-  else if (recentWorkouts.length >= 3) {
-    // Move goal 20% toward average performance
-    const targetGoal = Math.floor(avgDailyPerformance * 1.05); // Slightly above average
-    newGoal = Math.floor(currentGoal + (targetGoal - currentGoal) * 0.2);
+    newGoal = Math.max(currentGoal + 5, currentGoal * (1 + Math.min(adjustmentPercent, 0.12)));
+  } else {
+    const missRatio = (currentGoal - latestWorkout.pushups) / currentGoal;
+    adjustmentPercent = missRatio >= 0.5 ? 0.12 : missRatio >= 0.25 ? 0.08 : 0.04;
+    if (recentWorkouts.length >= 3 && completionRate <= 0.33) {
+      adjustmentPercent += 0.03;
+    }
+    newGoal = currentGoal * (1 - Math.min(adjustmentPercent, 0.15));
   }
 
   // Apply personal best consideration (minimum floor)
-  if (personalBest > 0) {
-    const pbFloor = Math.floor(personalBest * 0.6); // At least 60% of personal best
+  if (personalBest > currentGoal) {
+    const pbFloor = Math.floor(personalBest * 0.35);
     newGoal = Math.max(newGoal, pbFloor);
   }
 
   // Enforce proficiency bounds
-  const minGoal = Math.floor(profData.dailyCapacity.min * 0.8); // Allow 20% below min
+  const minGoal = Math.max(10, Math.floor(profData.dailyCapacity.min * 0.5));
   const maxGoal = profData.dailyCapacity.max;
 
-  newGoal = Math.max(minGoal, Math.min(newGoal, maxGoal));
-
-  // Ensure goal is always at least baseGoal for beginners
-  if (proficiency === 'beginner') {
-    newGoal = Math.max(baseGoal, newGoal);
-  }
-
-  return newGoal;
+  return roundedToFive(Math.max(minGoal, Math.min(newGoal, maxGoal)));
 }

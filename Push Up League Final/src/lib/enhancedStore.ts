@@ -129,6 +129,7 @@ export interface UserState {
 
   // Goals & Records
   dailyGoal: number;
+  dailyGoalLastAdjustedDate: string | null;
   personalBest: number;
   variationPBs: Record<PushUpType, number>;
 
@@ -221,6 +222,7 @@ const getInitialState = () => ({
   totalLifetimePushups: 0,
   variationStats: getVariationDefaults(),
   dailyGoal: 50,
+  dailyGoalLastAdjustedDate: null,
   personalBest: 0,
   variationPBs: getVariationDefaults(),
   bodyWeightKg: 77, // Default: 77kg (~170lbs)
@@ -524,7 +526,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       variationPBs: newVariationPBs,
     });
 
-    // Update daily goal
+    // Update daily goal once per workout day based on the user's recent pattern.
     get().updateDailyGoal();
 
     // Trigger immediate sync to Firebase if authenticated
@@ -826,8 +828,29 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
       pushups: w.pushups,
       goalCompleted: w.goalCompleted
     }));
-    const goal = calculateDailyGoal(state.proficiency, state.currentStreak, state.personalBest, workoutHistory);
-    set({ dailyGoal: goal });
+    const sortedWorkouts = [...state.workouts].sort((a, b) => a.date.localeCompare(b.date));
+    const latestWorkout = sortedWorkouts[sortedWorkouts.length - 1];
+    if (latestWorkout && state.dailyGoalLastAdjustedDate === latestWorkout.date) {
+      return;
+    }
+
+    const shouldAdjustFromBehavior = Boolean(
+      latestWorkout && state.dailyGoalLastAdjustedDate !== latestWorkout.date
+    );
+    const goal = calculateDailyGoal(
+      state.proficiency,
+      state.currentStreak,
+      state.personalBest,
+      shouldAdjustFromBehavior ? workoutHistory : [],
+      shouldAdjustFromBehavior ? state.dailyGoal : undefined
+    );
+
+    set({
+      dailyGoal: goal,
+      dailyGoalLastAdjustedDate: shouldAdjustFromBehavior
+        ? latestWorkout!.date
+        : state.dailyGoalLastAdjustedDate,
+    });
   },
 
   setBodyWeight: (weightKg: number) => {
