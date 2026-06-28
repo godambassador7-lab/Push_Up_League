@@ -58,40 +58,45 @@ export interface IronSession {
 const trackAsset = (filename: string) =>
   `${process.env.NEXT_PUBLIC_RESOLVED_BASE_PATH || ''}/iron-mode-tracks/${filename}`;
 
+const freebeatsCredit = {
+  artistName: 'Freebeats.io',
+  artistUrl: 'https://freebeats.io/',
+};
+
 // The curated Iron Mode library. Keep this list limited to provided app assets.
 export const IRON_MODE_TRACKS: Record<string, Track> = {
   'dat-hitta': {
     trackId: 'dat-hitta',
     title: 'Dat Hitta',
-    artistName: 'Push Up League',
+    ...freebeatsCredit,
     intensity: 'grind',
     audioUrl: trackAsset('dat-hitta.mp3'),
   },
   dystopia: {
     trackId: 'dystopia',
     title: 'Dystopia',
-    artistName: 'Push Up League',
+    ...freebeatsCredit,
     intensity: 'grind',
     audioUrl: trackAsset('dystopia.mp3'),
   },
   flex: {
     trackId: 'flex',
     title: 'Flex',
-    artistName: 'Push Up League',
+    ...freebeatsCredit,
     intensity: 'warmup',
     audioUrl: trackAsset('flex.mp3'),
   },
   'flood-the-block': {
     trackId: 'flood-the-block',
     title: 'Flood The Block',
-    artistName: 'Push Up League',
+    ...freebeatsCredit,
     intensity: 'boss',
     audioUrl: trackAsset('flood-the-block.mp3'),
   },
   'my-clique': {
     trackId: 'my-clique',
     title: 'My Clique',
-    artistName: 'Push Up League',
+    ...freebeatsCredit,
     intensity: 'boss',
     audioUrl: trackAsset('my-clique.mp3'),
   },

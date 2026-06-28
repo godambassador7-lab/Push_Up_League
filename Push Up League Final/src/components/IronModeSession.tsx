@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { SessionConfig } from './IronModeSetup';
 import {
   IronSession,
@@ -21,6 +21,8 @@ interface IronModeSessionProps {
 }
 
 const pushUpTypes = Object.values(PUSHUP_TYPES);
+const REST_ALARM_REPEAT_COUNT = 3;
+const REST_ALARM_URL = `${process.env.NEXT_PUBLIC_RESOLVED_BASE_PATH || ''}/rest-timer-alarm.mp3`;
 
 export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessionProps) => {
   // Session state
@@ -60,8 +62,46 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   // Music state
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const restAlarmRef = useRef<HTMLAudioElement | null>(null);
+  const restCompletionHandledRef = useRef(false);
 
   const currentTrack = config.trackId ? getTrackById(config.trackId) : undefined;
+
+  const playRestAlarm = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const alarmAudio = restAlarmRef.current ?? new Audio(REST_ALARM_URL);
+    restAlarmRef.current = alarmAudio;
+
+    alarmAudio.pause();
+    alarmAudio.currentTime = 0;
+
+    let playsRemaining = REST_ALARM_REPEAT_COUNT;
+    const playNext = () => {
+      if (playsRemaining <= 0) {
+        alarmAudio.onended = null;
+        return;
+      }
+
+      playsRemaining -= 1;
+      alarmAudio.currentTime = 0;
+      void alarmAudio.play().catch(() => {
+        alarmAudio.onended = null;
+      });
+    };
+
+    alarmAudio.onended = playNext;
+    playNext();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (!restAlarmRef.current) return;
+
+      restAlarmRef.current.pause();
+      restAlarmRef.current.onended = null;
+    };
+  }, []);
 
   // Session timer
   useEffect(() => {
@@ -80,16 +120,20 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
     const interval = setInterval(() => {
       setRestTime((prev) => {
-        if (prev >= activeRestDuration) {
-          setIsResting(false);
-          return 0;
-        }
-        return prev + 1;
+        return Math.min(prev + 1, activeRestDuration);
       });
     }, 1000);
 
     return () => clearInterval(interval);
   }, [isResting, isPaused, activeRestDuration]);
+
+  useEffect(() => {
+    if (!isResting || restCompletionHandledRef.current || restTime < activeRestDuration) return;
+
+    restCompletionHandledRef.current = true;
+    playRestAlarm();
+    setIsResting(false);
+  }, [isResting, restTime, activeRestDuration, playRestAlarm]);
 
   // Music auto-play
   useEffect(() => {
@@ -183,6 +227,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     // Start rest timer
     if (config.restTimer) {
       setActiveRestDuration(nextRestDuration);
+      restCompletionHandledRef.current = false;
       setIsResting(true);
       setRestTime(0);
       addEvent('REST_START', { duration: nextRestDuration });

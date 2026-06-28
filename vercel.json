@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm --prefix \"Push Up League Final\" install",
+  "buildCommand": "npm --prefix \"Push Up League Final\" run build",
+  "outputDirectory": "Push Up League Final/out"
+}
