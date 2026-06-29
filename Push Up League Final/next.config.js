@@ -17,6 +17,11 @@ const nextConfig = {
     unoptimized: true,
   },
   webpack: (config, { dev }) => {
+    config.module.rules.push({
+      test: /\.(mp3|wav|ogg)$/i,
+      type: 'asset/resource',
+    });
+
     if (dev) {
       // Avoid eval-source-map strings that can choke on unexpected characters.
       config.devtool = 'source-map';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IronModeSetup, SessionConfig } from './IronModeSetup';
 import { IronModeSession } from './IronModeSession';
 import { IronModeSummary } from './IronModeSummary';
@@ -8,8 +8,12 @@ import { IronSession } from '@/lib/ironMode';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { WorkoutSet } from '@/lib/enhancedStore';
 import { PUSHUP_TYPES, PushUpType } from '@/lib/pushupTypes';
+import countdownSoundUrl from '../3 Seconds Timer With Sound Effect.mp3';
 
-type IronModeScreen = 'setup' | 'session' | 'summary';
+type IronModeScreen = 'setup' | 'starting' | 'session' | 'summary';
+type StartCue = 3 | 2 | 1 | 'Start Reps';
+
+const START_REPS_CUE_MS = 700;
 
 interface IronModeProps {
   onExit: () => void;
@@ -19,13 +23,58 @@ export const IronMode = ({ onExit }: IronModeProps) => {
   const [screen, setScreen] = useState<IronModeScreen>('setup');
   const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
   const [completedSession, setCompletedSession] = useState<IronSession | null>(null);
+  const [startCue, setStartCue] = useState<StartCue>(3);
+  const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const userId = useEnhancedStore((state) => state.userId);
   const addWorkout = useEnhancedStore((state) => state.logWorkout);
 
+  const clearStartCountdown = () => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    if (sessionStartTimeoutRef.current) {
+      clearTimeout(sessionStartTimeoutRef.current);
+      sessionStartTimeoutRef.current = null;
+    }
+
+    if (countdownAudioRef.current) {
+      countdownAudioRef.current.pause();
+      countdownAudioRef.current.currentTime = 0;
+    }
+  };
+
+  useEffect(() => clearStartCountdown, []);
+
   const handleStartSession = (config: SessionConfig) => {
+    clearStartCountdown();
     setSessionConfig(config);
-    setScreen('session');
+    setStartCue(3);
+    setScreen('starting');
+
+    if (typeof window !== 'undefined') {
+      const audio = countdownAudioRef.current ?? new Audio(countdownSoundUrl);
+      countdownAudioRef.current = audio;
+      audio.currentTime = 0;
+      void audio.play().catch(() => undefined);
+    }
+
+    countdownIntervalRef.current = setInterval(() => {
+      setStartCue((cue) => {
+        if (cue === 3) return 2;
+        if (cue === 2) return 1;
+        return 'Start Reps';
+      });
+    }, 1000);
+
+    sessionStartTimeoutRef.current = setTimeout(() => {
+      clearStartCountdown();
+      setScreen('session');
+    }, 3000 + START_REPS_CUE_MS);
   };
 
   const handleEndSession = (session: IronSession) => {
@@ -68,6 +117,7 @@ export const IronMode = ({ onExit }: IronModeProps) => {
   };
 
   const handleExit = () => {
+    clearStartCountdown();
     setScreen('setup');
     setSessionConfig(null);
     setCompletedSession(null);
@@ -78,6 +128,37 @@ export const IronMode = ({ onExit }: IronModeProps) => {
     <>
       {screen === 'setup' && (
         <IronModeSetup onStartSession={handleStartSession} onCancel={onExit} />
+      )}
+
+      {screen === 'starting' && (
+        <div className="min-h-screen bg-dark px-4">
+          <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center">
+            <div className="w-full text-center">
+              <div className="mb-6 text-sm font-black uppercase tracking-wider text-gray-400 sm:text-base">
+                {startCue === 'Start Reps' ? 'Iron Mode' : 'Session starts in'}
+              </div>
+              <div
+                className={`font-black uppercase leading-none tracking-normal ${
+                  startCue === 'Start Reps'
+                    ? 'text-6xl text-warning sm:text-8xl md:text-9xl'
+                    : 'text-[12rem] text-accent sm:text-[18rem] md:text-[22rem]'
+                }`}
+              >
+                {startCue}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  clearStartCountdown();
+                  setScreen('setup');
+                }}
+                className="mt-8 rounded-lg border border-dark-border px-5 py-2 text-sm font-bold text-gray-300 transition hover:border-warning hover:text-warning"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {screen === 'session' && sessionConfig && (
