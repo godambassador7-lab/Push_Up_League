@@ -16,7 +16,7 @@ export interface Track {
 }
 
 export interface SessionEvent {
-  eventType: 'SET_START' | 'SET_COMPLETE' | 'REST_START' | 'PAUSE' | 'RESUME' | 'SESSION_END';
+  eventType: 'SET_START' | 'SET_COMPLETE' | 'REST_START' | 'PAUSE' | 'RESUME' | 'TRACK_CHANGE' | 'SESSION_END';
   timestamp: number;
   data?: any;
 }

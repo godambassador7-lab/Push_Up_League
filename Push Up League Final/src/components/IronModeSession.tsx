@@ -10,8 +10,9 @@ import {
   calculateSessionXP,
   getTrackById,
   generateSessionId,
+  IRON_MODE_TRACKS,
 } from '@/lib/ironMode';
-import { Play, Pause, Plus, Check, X, Volume2, Smartphone, SkipForward } from 'lucide-react';
+import { Play, Pause, Plus, Check, X, Volume2, Smartphone, SkipForward, Music } from 'lucide-react';
 import { PushUpType, PUSHUP_TYPES } from '@/lib/pushupTypes';
 
 interface IronModeSessionProps {
@@ -21,10 +22,18 @@ interface IronModeSessionProps {
 }
 
 const pushUpTypes = Object.values(PUSHUP_TYPES);
+const ironModeTracks = Object.values(IRON_MODE_TRACKS);
 const REST_ALARM_REPEAT_COUNT = 3;
 const REST_ALARM_URL = `${process.env.NEXT_PUBLIC_RESOLVED_BASE_PATH || ''}/rest-timer-alarm.mp3`;
 
 export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessionProps) => {
+  const initialTrackId = config.trackId ?? ironModeTracks[0]?.trackId ?? '';
+
+  // Music state
+  const [selectedTrackId, setSelectedTrackId] = useState(initialTrackId);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   // Session state
   const [session, setSession] = useState<IronSession>(() => ({
     sessionId: generateSessionId(),
@@ -33,8 +42,8 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
     mode: config.sessionType,
     music: {
       enabled: config.musicEnabled,
-      trackId: config.trackId,
-      tracksPlayed: config.musicEnabled && config.trackId ? [config.trackId] : [],
+      trackId: config.musicEnabled ? initialTrackId : undefined,
+      tracksPlayed: config.musicEnabled && initialTrackId ? [initialTrackId] : [],
     },
     sets: [],
     events: [],
@@ -61,13 +70,10 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   const [restSoundEnabled, setRestSoundEnabled] = useState(true);
   const [restVibrationEnabled, setRestVibrationEnabled] = useState(true);
 
-  // Music state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const restAlarmRef = useRef<HTMLAudioElement | null>(null);
   const restCompletionHandledRef = useRef(false);
 
-  const currentTrack = config.trackId ? getTrackById(config.trackId) : undefined;
+  const currentTrack = selectedTrackId ? getTrackById(selectedTrackId) : undefined;
 
   const playRestAlarm = useCallback(() => {
     if (typeof window === 'undefined' || !restSoundEnabled) return;
@@ -209,6 +215,31 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
   const addActiveRestSeconds = (seconds: number) => {
     setActiveRestDuration((duration) => Math.min(300, duration + seconds));
+  };
+
+  const changeTrack = (nextTrackId: string) => {
+    if (!IRON_MODE_TRACKS[nextTrackId] || nextTrackId === selectedTrackId) return;
+
+    const previousTrackId = selectedTrackId;
+    setSelectedTrackId(nextTrackId);
+    setSession((prev) => ({
+      ...prev,
+      music: {
+        ...prev.music,
+        trackId: nextTrackId,
+        tracksPlayed: prev.music.tracksPlayed.includes(nextTrackId)
+          ? prev.music.tracksPlayed
+          : [...prev.music.tracksPlayed, nextTrackId],
+      },
+      events: [
+        ...prev.events,
+        {
+          eventType: 'TRACK_CHANGE',
+          timestamp: Date.now(),
+          data: { fromTrackId: previousTrackId, toTrackId: nextTrackId },
+        },
+      ],
+    }));
   };
 
   const skipRest = () => {
@@ -422,6 +453,23 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
                 </button>
               </div>
             </div>
+            <label className="mt-3 block">
+              <span className="mb-1 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-gray-500">
+                <Music size={13} />
+                Change Track
+              </span>
+              <select
+                value={selectedTrackId}
+                onChange={(event) => changeTrack(event.target.value)}
+                className="w-full min-h-11 rounded-lg border border-dark-border bg-dark-card px-3 text-sm font-bold text-white outline-none transition focus:border-accent"
+              >
+                {ironModeTracks.map((track) => (
+                  <option key={track.trackId} value={track.trackId}>
+                    {track.title}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         )}
 

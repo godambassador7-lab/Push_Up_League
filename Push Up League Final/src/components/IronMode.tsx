@@ -25,17 +25,15 @@ export const IronMode = ({ onExit }: IronModeProps) => {
   const [completedSession, setCompletedSession] = useState<IronSession | null>(null);
   const [startCue, setStartCue] = useState<StartCue>(3);
   const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownCueTimeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const sessionStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const userId = useEnhancedStore((state) => state.userId);
   const addWorkout = useEnhancedStore((state) => state.logWorkout);
 
   const clearStartCountdown = () => {
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
+    countdownCueTimeoutRefs.current.forEach(clearTimeout);
+    countdownCueTimeoutRefs.current = [];
 
     if (sessionStartTimeoutRef.current) {
       clearTimeout(sessionStartTimeoutRef.current);
@@ -45,10 +43,28 @@ export const IronMode = ({ onExit }: IronModeProps) => {
     if (countdownAudioRef.current) {
       countdownAudioRef.current.pause();
       countdownAudioRef.current.currentTime = 0;
+      countdownAudioRef.current.onplaying = null;
     }
   };
 
   useEffect(() => clearStartCountdown, []);
+
+  const scheduleStartCues = (startedAt: number) => {
+    const scheduleCue = (delayMs: number, cue: StartCue) => {
+      const delayFromNow = Math.max(0, startedAt + delayMs - performance.now());
+      const timeout = setTimeout(() => setStartCue(cue), delayFromNow);
+      countdownCueTimeoutRefs.current.push(timeout);
+    };
+
+    scheduleCue(1000, 2);
+    scheduleCue(2000, 1);
+    scheduleCue(3000, 'Start Reps');
+
+    sessionStartTimeoutRef.current = setTimeout(() => {
+      clearStartCountdown();
+      setScreen('session');
+    }, Math.max(0, startedAt + 3000 + START_REPS_CUE_MS - performance.now()));
+  };
 
   const handleStartSession = (config: SessionConfig) => {
     clearStartCountdown();
@@ -58,23 +74,21 @@ export const IronMode = ({ onExit }: IronModeProps) => {
 
     if (typeof window !== 'undefined') {
       const audio = countdownAudioRef.current ?? new Audio(countdownSoundUrl);
+      let cuesScheduled = false;
+      const scheduleOnce = () => {
+        if (cuesScheduled) return;
+        cuesScheduled = true;
+        scheduleStartCues(performance.now());
+      };
+
       countdownAudioRef.current = audio;
       audio.currentTime = 0;
-      void audio.play().catch(() => undefined);
+      audio.onplaying = scheduleOnce;
+      void audio.play().then(scheduleOnce).catch(scheduleOnce);
+      return;
     }
 
-    countdownIntervalRef.current = setInterval(() => {
-      setStartCue((cue) => {
-        if (cue === 3) return 2;
-        if (cue === 2) return 1;
-        return 'Start Reps';
-      });
-    }, 1000);
-
-    sessionStartTimeoutRef.current = setTimeout(() => {
-      clearStartCountdown();
-      setScreen('session');
-    }, 3000 + START_REPS_CUE_MS);
+    scheduleStartCues(performance.now());
   };
 
   const handleEndSession = (session: IronSession) => {
