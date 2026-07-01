@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
+import { formatLocalDate } from '@/lib/date';
 import { PUSHUP_TYPES, PushUpType } from '@/lib/pushupTypes';
 import { WorkoutSet } from '@/lib/enhancedStore';
-import { Plus, Minus, Coins, Trophy, X, ChevronDown, Search } from 'lucide-react';
+import { Plus, Minus, Coins, Trophy, X, ChevronDown, Search, Lock, CheckCircle } from 'lucide-react';
 import { WorkoutSuccessModal } from './WorkoutSuccessModal';
 import { SessionChallengeSelector } from './SessionChallengeSelector';
 import { SessionChallenge, checkSessionChallengeCompletion, SessionWorkoutData } from '@/lib/sessionChallenges';
@@ -31,8 +32,12 @@ export const WorkoutLoggerAdvanced = () => {
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const waiverAccepted = useEnhancedStore((state) => state.waiverAccepted);
   const workouts = useEnhancedStore((state) => state.workouts);
+  const lockDay = useEnhancedStore((state) => state.lockDay);
+  const isDayLocked = useEnhancedStore((state) => state.isDayLocked);
 
   const todayWorkout = getTodayWorkout();
+  const today = formatLocalDate();
+  const isLocked = isDayLocked(today);
   const hasLoggedWorkoutBefore = workouts.length > 0;
 
   const addSet = () => {
@@ -206,12 +211,27 @@ export const WorkoutLoggerAdvanced = () => {
     return (
       <div className="p-4 sm:p-6 rounded-lg glass glass-border">
         <div className="text-center space-y-2">
+          {isLocked && <CheckCircle className="mx-auto text-success" size={40} />}
           <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-display">Today's Workout</div>
           <div className="text-2xl sm:text-3xl font-bold text-accent">{todayWorkout.pushups}</div>
           <div className="flex items-center justify-center gap-3 sm:gap-4 mt-2 sm:mt-3 text-xs sm:text-sm">
             <span className="text-gray-400">XP: <span className="text-electric-blue font-bold">+{todayWorkout.xpEarned}</span></span>
             <span className="text-gray-400">Coins: <span className="text-warning font-bold">+{todayWorkout.coinsEarned || 0}</span></span>
           </div>
+          {isLocked ? (
+            <div className="mt-4 rounded-lg border border-success/70 bg-success/10 p-3 text-sm font-bold text-success">
+              Day locked
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => lockDay(today)}
+              className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-warning/60 px-4 text-sm font-bold uppercase tracking-wider text-warning transition hover:bg-warning/10"
+            >
+              <Lock size={16} />
+              Lock Today
+            </button>
+          )}
         </div>
       </div>
     );

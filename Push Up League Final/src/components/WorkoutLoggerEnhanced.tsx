@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
-import { Plus, Minus, AlertTriangle, CheckCircle } from 'lucide-react';
+import { formatLocalDate } from '@/lib/date';
+import { Plus, Minus, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
 
 export const WorkoutLoggerEnhanced = () => {
   const [pushups, setPushups] = useState(10);
@@ -14,10 +15,11 @@ export const WorkoutLoggerEnhanced = () => {
 
   const logWorkout = useEnhancedStore((state) => state.logWorkout);
   const getTodayWorkout = useEnhancedStore((state) => state.getTodayWorkout);
+  const lockDay = useEnhancedStore((state) => state.lockDay);
   const isDayLocked = useEnhancedStore((state) => state.isDayLocked);
 
   const todayWorkout = getTodayWorkout();
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate();
   const isLocked = isDayLocked(today);
 
   const handleSubmit = () => {
@@ -159,6 +161,17 @@ export const WorkoutLoggerEnhanced = () => {
       >
         Log Workout
       </button>
+
+      {todayWorkout && !isLocked && (
+        <button
+          type="button"
+          onClick={() => lockDay(today)}
+          className="w-full py-3 glass-light border border-warning/60 text-warning font-bold rounded-lg hover:bg-warning/10 transition uppercase tracking-wider font-display flex items-center justify-center gap-2"
+        >
+          <Lock size={18} />
+          Lock Today
+        </button>
+      )}
 
       {submitted && !error && (
         <div className="p-3 bg-success/20 border border-success rounded text-success text-sm animate-fade-in">

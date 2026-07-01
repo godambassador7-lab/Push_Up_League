@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useEnhancedStore } from '@/lib/enhancedStore';
 import { calculateCalories, calculateMultiSetCalories } from '@/lib/calorieCalculator';
+import { formatLocalDate } from '@/lib/date';
 import { getPushUpTypeData, PushUpType } from '@/lib/pushupTypes';
 import { ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle, Target, Calendar as CalendarIcon } from 'lucide-react';
 
@@ -68,15 +69,12 @@ export const WorkoutCalendar = () => {
   };
 
   const getWorkoutForDate = (day: number) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = formatLocalDate(new Date(year, month, day));
     return workouts.find(w => w.date === dateStr);
   };
 
   const getWorkoutForFullDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = date.getDate();
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = formatLocalDate(date);
     return workouts.find(w => w.date === dateStr);
   };
 
@@ -115,7 +113,7 @@ export const WorkoutCalendar = () => {
   };
 
   const handleLockDay = (day: number) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = formatLocalDate(new Date(year, month, day));
     const workout = getWorkoutForDate(day);
 
     if (workout && !workout.isLocked) {
@@ -326,7 +324,7 @@ export const WorkoutCalendar = () => {
           <div className="flex md:grid md:grid-cols-7 gap-3 sm:gap-4 min-w-max md:min-w-0">
           {weekDays.map((date, index) => {
             const workout = getWorkoutForFullDate(date);
-            const dateKey = date.toISOString().split('T')[0];
+            const dateKey = formatLocalDate(date);
             const isToday = today.toDateString() === date.toDateString();
             const isFuture = date > today;
             const hasWorkout = !!workout;

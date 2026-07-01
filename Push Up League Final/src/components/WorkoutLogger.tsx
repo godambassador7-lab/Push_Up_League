@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useUserStore } from '@/lib/store';
 import { useEnhancedStore } from '@/lib/enhancedStore';
-import { Plus, Minus, Coins } from 'lucide-react';
+import { formatLocalDate } from '@/lib/date';
+import { Plus, Minus, Coins, Lock, CheckCircle } from 'lucide-react';
 import { WorkoutSuccessModal } from './WorkoutSuccessModal';
 import { WaiverModal } from './WaiverModal';
 
@@ -15,13 +15,17 @@ export const WorkoutLogger = () => {
   const [lastWorkoutData, setLastWorkoutData] = useState<any>(null);
   const [showWaiverModal, setShowWaiverModal] = useState(false);
 
-  const logWorkout = useUserStore((state) => state.logWorkout);
-  const getTodayWorkout = useUserStore((state) => state.getTodayWorkout);
+  const logWorkout = useEnhancedStore((state) => state.logWorkout);
+  const getTodayWorkout = useEnhancedStore((state) => state.getTodayWorkout);
   const currentStreak = useEnhancedStore((state) => state.currentStreak);
   const dailyGoal = useEnhancedStore((state) => state.dailyGoal);
   const waiverAccepted = useEnhancedStore((state) => state.waiverAccepted);
+  const lockDay = useEnhancedStore((state) => state.lockDay);
+  const isDayLocked = useEnhancedStore((state) => state.isDayLocked);
 
   const todayWorkout = getTodayWorkout();
+  const today = formatLocalDate();
+  const isLocked = isDayLocked(today);
 
   const handleSubmit = () => {
     // Check if waiver is accepted
@@ -31,20 +35,26 @@ export const WorkoutLogger = () => {
     }
 
     // Calculate expected rewards (simplified - actual calc in store)
+    const totalPushups = pushups * sets;
     const baseCoins = 10 + (sets > 1 ? sets * 2 : 0);
     const streakMult = currentStreak >= 30 ? 1.15 : currentStreak >= 14 ? 1.1 : currentStreak >= 7 ? 1.05 : 1.0;
-    const estimatedCoins = Math.floor(baseCoins * streakMult) + (pushups >= dailyGoal ? 20 : 0) + (currentStreak > 1 ? 5 : 0);
+    const estimatedCoins = Math.floor(baseCoins * streakMult) + (totalPushups >= dailyGoal ? 20 : 0) + (currentStreak > 1 ? 5 : 0);
 
-    const baseXP = pushups * (1 + (sets > 1 ? sets * 0.05 : 0));
+    const baseXP = totalPushups * (1 + (sets > 1 ? sets * 0.05 : 0));
     const estimatedXP = Math.min(Math.floor(baseXP * (dailyChallenge ? 1.25 : 1)), 500);
 
-    logWorkout(pushups, sets > 1 ? sets : undefined, dailyChallenge);
+    const workoutSets = Array.from({ length: sets }, () => ({
+      reps: pushups,
+      type: 'standard' as const,
+    }));
+    const result = logWorkout(totalPushups, workoutSets, dailyChallenge);
+    if (!result.success) return;
 
     setLastWorkoutData({
-      pushups,
+      pushups: totalPushups,
       xpEarned: estimatedXP,
       coinsEarned: estimatedCoins,
-      goalCompleted: pushups >= dailyGoal,
+      goalCompleted: totalPushups >= dailyGoal,
       streakDay: currentStreak,
     });
 
@@ -64,6 +74,21 @@ export const WorkoutLogger = () => {
             <span className="text-gray-400">XP: <span className="text-electric-blue font-bold">+{todayWorkout.xpEarned}</span></span>
             <span className="text-gray-400">Coins: <span className="text-warning font-bold">+{todayWorkout.coinsEarned || 0}</span></span>
           </div>
+          {isLocked ? (
+            <div className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-success/70 bg-success/10 px-4 py-2 text-sm font-bold text-success">
+              <CheckCircle size={16} />
+              Day locked
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => lockDay(today)}
+              className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-warning/60 px-4 text-sm font-bold uppercase tracking-wider text-warning transition hover:bg-warning/10"
+            >
+              <Lock size={16} />
+              Lock Today
+            </button>
+          )}
         </div>
       </div>
     );

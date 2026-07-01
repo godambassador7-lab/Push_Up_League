@@ -6,6 +6,7 @@ import { ActivePowerUp, PowerUpType } from './powerUps';
 import { Quest } from './quests';
 import { getTodayBonus } from './dailyBonus';
 import { AchievementType, checkAchievements } from './achievements';
+import { formatLocalDate } from './date';
 
 export interface WorkoutSet {
   reps: number;
@@ -234,7 +235,7 @@ const getMissedDayPenalty = (missedDays: number) => {
 
 const getRecoveryModeActive = (state: Pick<UserState, 'recoveryModeUntil'>) => {
   if (!state.recoveryModeUntil) return false;
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate();
   return state.recoveryModeUntil >= today;
 };
 
@@ -378,7 +379,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
   logWorkout: (pushups: number, workoutSets?: WorkoutSet[], challengeBonus?: boolean, sessionDuration?: number) => {
     const state = get();
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDate();
 
     // Check if day is already locked
     if (state.isDayLocked(today)) {
@@ -678,6 +679,14 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
           : w
       ),
     }));
+
+    if (get().isAuthenticated) {
+      import('./syncManager').then(({ syncManager }) => {
+        syncManager.forceSyncNow().catch(err => {
+          console.error('Failed to sync locked day to Firebase:', err);
+        });
+      });
+    }
   },
 
   isDayLocked: (date: string) => {
@@ -904,7 +913,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
   getTodayWorkout: () => {
     const state = get();
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDate();
     return state.workouts.find(w => w.date === today);
   },
 
@@ -914,7 +923,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
 
   getStreakStatus: () => {
     const state = get();
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDate();
     const todayWorkout = state.workouts.find(w => w.date === today);
 
     return {
@@ -991,7 +1000,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
         ? latestWorkout!.date
         : state.dailyGoalLastAdjustedDate,
       lastGoalAdjustment: {
-        date: shouldAdjustFromBehavior && latestWorkout ? latestWorkout.date : new Date().toISOString().split('T')[0],
+        date: shouldAdjustFromBehavior && latestWorkout ? latestWorkout.date : formatLocalDate(),
         previousGoal: state.dailyGoal,
         nextGoal: goal,
         recommendedGoal,
@@ -1015,7 +1024,7 @@ export const useEnhancedStore = create<UserState>((set, get) => ({
     const until = new Date();
     until.setDate(until.getDate() + Math.max(1, days) - 1);
     set({
-      recoveryModeUntil: until.toISOString().split('T')[0],
+      recoveryModeUntil: formatLocalDate(until),
       recoveryReductionPercent: Math.max(10, Math.min(60, reductionPercent)),
       dailyGoalLastAdjustedDate: null,
     });

@@ -75,13 +75,38 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
   const currentTrack = selectedTrackId ? getTrackById(selectedTrackId) : undefined;
 
-  const playRestAlarm = useCallback(() => {
-    if (typeof window === 'undefined' || !restSoundEnabled) return;
-
+  const ensureRestAlarm = useCallback(() => {
+    if (typeof window === 'undefined') return null;
     const alarmAudio = restAlarmRef.current ?? new Audio(REST_ALARM_URL);
     restAlarmRef.current = alarmAudio;
+    alarmAudio.preload = 'auto';
+    return alarmAudio;
+  }, []);
+
+  const unlockRestAlarm = useCallback(() => {
+    const alarmAudio = ensureRestAlarm();
+    if (!alarmAudio) return;
+
+    const previousMuted = alarmAudio.muted;
+    alarmAudio.muted = true;
+    alarmAudio.currentTime = 0;
+    void alarmAudio.play().then(() => {
+      alarmAudio.pause();
+      alarmAudio.currentTime = 0;
+      alarmAudio.muted = previousMuted;
+    }).catch(() => {
+      alarmAudio.muted = previousMuted;
+    });
+  }, [ensureRestAlarm]);
+
+  const playRestAlarm = useCallback(() => {
+    if (!restSoundEnabled) return;
+
+    const alarmAudio = ensureRestAlarm();
+    if (!alarmAudio) return;
 
     alarmAudio.pause();
+    alarmAudio.muted = false;
     alarmAudio.currentTime = 0;
 
     let playsRemaining = REST_ALARM_REPEAT_COUNT;
@@ -100,7 +125,7 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
 
     alarmAudio.onended = playNext;
     playNext();
-  }, [restSoundEnabled]);
+  }, [ensureRestAlarm, restSoundEnabled]);
 
   useEffect(() => {
     return () => {
@@ -249,6 +274,8 @@ export const IronModeSession = ({ config, onEndSession, userId }: IronModeSessio
   };
 
   const completeSet = () => {
+    unlockRestAlarm();
+
     const setLog: SetLog = {
       setNumber: currentSet,
       variation: currentVariation,
